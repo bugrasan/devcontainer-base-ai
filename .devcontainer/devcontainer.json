@@ -1,0 +1,70 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	// "name": "Node.js & TypeScript",
+	"name": "custom build - one size fits all",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	// "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"username": "vscode"
+		},
+    	"ghcr.io/devcontainers/features/node:1": {
+			"version": "22"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.13",
+			"installPipenv": "true",
+			"installJupyterlab": "true"
+		}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": {
+		// "claude-code": "npm install -g @anthropic-ai/claude-code",
+		"vim": "sudo apt-get update && sudo apt-get install -y vim",
+		"claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
+		"codex": "npm install -g @openai/codex",
+		"python-anthropic": "pip install anthropic",
+		"python-openai": "pip install openai",
+		"langchain": "pip install langchain langchain-openai langchain-anthropic",
+		"python-notebook": "pip install notebook",
+		// "python-azure-openai": "pip install azure-ai-openai",
+		// "bmad": "npx bmad-method@alpha install",
+	},
+	// "yarn install",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"editor.formatOnSave": true,
+				"terminal.integrated.shell.linux": "/bin/bash"
+			},
+			"extensions": [
+				"EditorConfig.EditorConfig",
+				"albert.TabOut",
+				"dbaeumer.vscode-eslint",
+				"anthropic.claude-code",
+				"github.copilot",
+				"github.copilot-chat",
+				"ms-vscode.vscode-speech",
+				"ms-vscode.vscode-speech-language-pack-de-de",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter"
+			],
+		},
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "vscode"
+}
