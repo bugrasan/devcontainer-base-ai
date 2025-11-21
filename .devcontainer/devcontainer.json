@@ -3,15 +3,27 @@
 {
 	// "name": "Node.js & TypeScript",
 	"name": "custom build - one size fits all",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	
+	// https://github.com/devcontainers/images/tree/main/src/python
+	// "image": "mcr.microsoft.com/devcontainers/python:3.13",
+	
+	// https://github.com/devcontainers/images/tree/main/src/typescript-node
 	// "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
-	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+	// https://github.com/devcontainers/images/tree/main/src/base-debian
+	"image": "mcr.microsoft.com/devcontainers/base:trixie",					// bookworm, trixie
+	// "image": "mcr.microsoft.com/devcontainers/base:debian",
+
+	// https://github.com/devcontainers/images/tree/main/src/base-ubuntu
+	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu",				// comes with node:v18, python:v3.12
+	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.05",		// available only LTEs e.g. 24.05, 22.04
+
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {
-			"installZsh": true,
+			// "installZsh": false, // already part of devcontainer 'base' image
 			"username": "vscode"
 		},
     	"ghcr.io/devcontainers/features/node:1": {
@@ -19,7 +31,6 @@
 		},
 		"ghcr.io/devcontainers/features/python:1": {
 			"version": "3.13",
-			"installPipenv": "true",
 			"installJupyterlab": "true"
 		}
 	},
@@ -29,16 +40,19 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": {
-		// "claude-code": "npm install -g @anthropic-ai/claude-code",
 		"vim": "sudo apt-get update && sudo apt-get install -y vim",
-		"claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
+		"npm-lint": "npm install -g eslint typescript",
+
+		// "claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
+		"claude-code": "npm install -g @anthropic-ai/claude-code",
 		"codex": "npm install -g @openai/codex",
+		"bmad": "npx bmad-method@alpha install",
+
+		// "python-notebook": "pip install notebook",
 		"python-anthropic": "pip install anthropic",
 		"python-openai": "pip install openai",
-		"langchain": "pip install langchain langchain-openai langchain-anthropic",
-		"python-notebook": "pip install notebook",
-		// "python-azure-openai": "pip install azure-ai-openai",
-		// "bmad": "npx bmad-method@alpha install",
+
+		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem]",
 	},
 	// "yarn install",
 
@@ -46,21 +60,30 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"editor.formatOnSave": true,
+				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash"
 			},
 			"extensions": [
+				// recomended by the node feature above
+				"dbaeumer.vscode-eslint",
+				// recomended by the python feature above
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-python.autopep8",
+				
+				// jupyter support - installed by python feature above
+				"ms-toolsai.jupyter",
+
+				// my basic extensions
 				"EditorConfig.EditorConfig",
 				"albert.TabOut",
-				"dbaeumer.vscode-eslint",
+				
+				// AI extensions
 				"anthropic.claude-code",
 				"github.copilot",
 				"github.copilot-chat",
 				"ms-vscode.vscode-speech",
 				"ms-vscode.vscode-speech-language-pack-de-de",
-				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"ms-toolsai.jupyter"
 			],
 		},
 	},
