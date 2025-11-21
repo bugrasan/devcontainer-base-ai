@@ -1,0 +1,93 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	// "name": "Node.js & TypeScript",
+	"name": "custom build - one size fits all",
+	
+	// https://github.com/devcontainers/images/tree/main/src/python
+	// "image": "mcr.microsoft.com/devcontainers/python:3.13",
+	
+	// https://github.com/devcontainers/images/tree/main/src/typescript-node
+	// "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+	// https://github.com/devcontainers/images/tree/main/src/base-debian
+	"image": "mcr.microsoft.com/devcontainers/base:trixie",					// bookworm, trixie
+	// "image": "mcr.microsoft.com/devcontainers/base:debian",
+
+	// https://github.com/devcontainers/images/tree/main/src/base-ubuntu
+	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu",				// comes with node:v18, python:v3.12
+	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.05",		// available only LTEs e.g. 24.05, 22.04
+
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			// "installZsh": false, // already part of devcontainer 'base' image
+			"username": "vscode"
+		},
+    	"ghcr.io/devcontainers/features/node:1": {
+			"version": "22"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.13",
+			"installJupyterlab": "true"
+		}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": {
+		"vim": "sudo apt-get update && sudo apt-get install -y vim",
+		"npm-lint": "npm install -g eslint typescript",
+
+		// "claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
+		"claude-code": "npm install -g @anthropic-ai/claude-code",
+		"codex": "npm install -g @openai/codex",
+		"bmad": "npx bmad-method@alpha install",
+
+		// "python-notebook": "pip install notebook",
+		"python-anthropic": "pip install anthropic",
+		"python-openai": "pip install openai",
+
+		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem]",
+	},
+	// "yarn install",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"settings": {
+				// "editor.formatOnSave": true,
+				"terminal.integrated.shell.linux": "/bin/bash"
+			},
+			"extensions": [
+				// recomended by the node feature above
+				"dbaeumer.vscode-eslint",
+				// recomended by the python feature above
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-python.autopep8",
+				
+				// jupyter support - installed by python feature above
+				"ms-toolsai.jupyter",
+
+				// my basic extensions
+				"EditorConfig.EditorConfig",
+				"albert.TabOut",
+				
+				// AI extensions
+				"anthropic.claude-code",
+				"github.copilot",
+				"github.copilot-chat",
+				"ms-vscode.vscode-speech",
+				"ms-vscode.vscode-speech-language-pack-de-de",
+			],
+		},
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "vscode"
+}
