@@ -3,10 +3,10 @@
 {
 	// "name": "Node.js & TypeScript",
 	"name": "custom build - one size fits all",
-	
+
 	// https://github.com/devcontainers/images/tree/main/src/python
 	// "image": "mcr.microsoft.com/devcontainers/python:3.13",
-	
+
 	// https://github.com/devcontainers/images/tree/main/src/typescript-node
 	// "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
 
@@ -22,13 +22,16 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	"features": {
+		// https://github.com/devcontainers/features/blob/main/src/common-utils/devcontainer-feature.json
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			// "installZsh": false, // already part of devcontainer 'base' image
 			"username": "vscode"
 		},
+		// https://github.com/devcontainers/features/blob/main/src/node/devcontainer-feature.json
     	"ghcr.io/devcontainers/features/node:1": {
 			"version": "22"
 		},
+		// https://github.com/devcontainers/features/blob/main/src/python/devcontainer-feature.json
 		"ghcr.io/devcontainers/features/python:1": {
 			"version": "3.13",
 			"installJupyterlab": "true"
@@ -40,19 +43,21 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": {
-		"vim": "sudo apt-get update && sudo apt-get install -y vim",
-		"npm-lint": "npm install -g eslint typescript",
+		// Remember!!  they are executed in parallel
+		"basic-dpkgs": "sudo apt update && sudo apt install -y vim bat && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
 		// "claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
-		"claude-code": "npm install -g @anthropic-ai/claude-code",
-		"codex": "npm install -g @openai/codex",
-		"bmad": "npx bmad-method@alpha install",
+		"claude-code": "npm install -g @anthropic-ai/claude-code && echo '03-claude-code' >> ~/devcontainer-post-create.txt",
+		"codex": "npm install -g @openai/codex && echo '04-codex' >> ~/devcontainer-post-create.txt",
+		// Requires interactive shell
+		//"bmad": "npx bmad-method@alpha install && echo 'done5' >> ~/devcontainer-post-create.txt",
 
 		// "python-notebook": "pip install notebook",
-		"python-anthropic": "pip install anthropic",
-		"python-openai": "pip install openai",
+		"python-anthropic": "pip install anthropic && echo '05-python-anthropic' >> ~/devcontainer-post-create.txt",
+		"python-openai": "pip install openai && echo '06-python-openai' >> ~/devcontainer-post-create.txt",
 
-		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem]",
+		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '07-langchain' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -64,24 +69,27 @@
 				"terminal.integrated.shell.linux": "/bin/bash"
 			},
 			"extensions": [
-				// recomended by the node feature above
-				"dbaeumer.vscode-eslint",
-				// recomended by the python feature above
-				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"ms-python.autopep8",
-				
+				// installed by the node feature above
+				// "dbaeumer.vscode-eslint",
+				// installed by the python feature above
+				// "ms-python.python",
+				// "ms-python.vscode-pylance",
+				// "ms-python.autopep8",
+
 				// jupyter support - installed by python feature above
 				"ms-toolsai.jupyter",
+				// ms-toolsai.jupyter-keymap will be auto installed as dependency
+				// but will run on local host only, not in container
 
 				// my basic extensions
 				"EditorConfig.EditorConfig",
 				"albert.TabOut",
-				
+
 				// AI extensions
 				"anthropic.claude-code",
 				"github.copilot",
 				"github.copilot-chat",
+				// will be enabled on local host and not in container
 				"ms-vscode.vscode-speech",
 				"ms-vscode.vscode-speech-language-pack-de-de",
 			],
