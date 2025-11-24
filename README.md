@@ -12,3 +12,9 @@ echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
 echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
 ```
 
+- fix claude installation to native instead of npm
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
