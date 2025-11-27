@@ -38,7 +38,7 @@
 			"version": "os-provided",
 			//"version": "3.13",
 			"installJupyterlab": "true"
-		}
+		},
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -50,17 +50,21 @@
 		"basic-dpkgs": "sudo apt update && sudo apt install -y vim bat && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
-		// "claude-code": "curl -fsSL https://claude.ai/install.sh | bash",
-		"claude-code": "npm install -g @anthropic-ai/claude-code && echo '03-claude-code' >> ~/devcontainer-post-create.txt",
-		"codex": "npm install -g @openai/codex && echo '04-codex' >> ~/devcontainer-post-create.txt",
+		// github copilot cli
+		"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
+		// bash is the recommended way as of Nov'25
+		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
+		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		"codex": "npm install -g @openai/codex && echo '05-codex' >> ~/devcontainer-post-create.txt",
 		// Requires interactive shell
-		//"bmad": "npx bmad-method@alpha install && echo 'done5' >> ~/devcontainer-post-create.txt",
+		//"bmad": "npx bmad-method@alpha install && echo 'doneX' >> ~/devcontainer-post-create.txt",
 
 		// "python-notebook": "pip install notebook",
-		"python-anthropic": "pip install anthropic && echo '05-python-anthropic' >> ~/devcontainer-post-create.txt",
-		"python-openai": "pip install openai && echo '06-python-openai' >> ~/devcontainer-post-create.txt",
+		"python-anthropic": "pip install anthropic && echo '06-python-anthropic' >> ~/devcontainer-post-create.txt",
+		"python-openai": "pip install openai && echo '07-python-openai' >> ~/devcontainer-post-create.txt",
 
-		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '07-langchain' >> ~/devcontainer-post-create.txt",
+		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
+		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
