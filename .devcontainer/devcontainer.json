@@ -116,7 +116,9 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+
 				// inline instructions for github copilot chat
+				// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
 				"github.copilot.chat.codeGeneration.instructions": [
 					{
 						"text": "This dev container includes `python3` and `pip3` pre-installed and available on the `PATH`, along with the Python language extensions for Python development."
@@ -153,6 +155,9 @@
 				// will be enabled on local host and not in container
 				"ms-vscode.vscode-speech",
 				"ms-vscode.vscode-speech-language-pack-de-de",
+
+				// vscode recommended extensions for devcontainers
+				"mutantdino.resourcemonitor",
 			],
 		},
 	},
