@@ -66,7 +66,7 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
-		"basic-dpkgs": "sudo apt update && sudo apt install -y vim bat && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		"basic-dpkgs": "sudo apt update && sudo apt install -y vim bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
 		// github copilot cli
