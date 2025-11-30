@@ -45,18 +45,30 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
+	
+	"mounts": [
+		// ${localEnv:HOME} on Linux/macOS
+		// ${localEnv:USERPROFILE} on Windows
+		"source=~/.gitconfig,target=~/.gitconfig,type=bind,readonly,consistency=cached",
+		"source=~/.gitignore,target=~/.gitignore,type=bind,readonly,consistency=cached",
+		"source=~/.ssh/id_ed25519,target=~/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
+		"source=~/.ssh/id_ed25519.pub,target=~/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+	],
 
+
+	// set env vars for inside the container
 	"containerEnv": {
 		// claude-code disable telemetry
 		// https://code.claude.com/docs/en/data-usage
 		"DISABLE_TELEMETRY": "1",
 		"DISABLE_ERROR_REPORTING": "1",
 		"DISABLE_BUG_COMMAND": "1",
+
 		// codex: no opt-out telemetry
 		// gh-copilot: no opt-out telemetry
 	},
+	// copy from host env when container starts
 	"remoteEnv": {
-		// copy from host env when container starts
 		// "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
 		// or use VS Code settings
 		// "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
