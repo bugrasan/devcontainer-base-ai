@@ -47,6 +47,15 @@
 
 	
 	"mounts": [
+		// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
+		// It creates named volume called profile mounted to /root, which will survive a rebuild.
+		// It next creates an anonymous volume mounted to /root/.vscode-server that gets destroyed on rebuild,
+		//   which allows VS Code to reinstall extensions and dotfiles.
+		// !!! Make sure to adjust the target path if you are not using the 'vscode' user
+		// !!! see also "remoteUser" setting below
+		"source=profile,target=/home/vscode,type=volume",
+		"target=/home/vscode/.vscode-server,type=volume"
+
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
 		"source=~/.gitconfig,target=~/.gitconfig,type=bind,readonly,consistency=cached",
@@ -163,6 +172,8 @@
 	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// !!! if not set to then adjust mounts above accordingly
+	// !!! see also "mounts" setting above
 	"remoteUser": "vscode",
 	
 	// Mount local .env file into the container
