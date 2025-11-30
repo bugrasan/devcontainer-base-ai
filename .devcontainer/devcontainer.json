@@ -116,6 +116,18 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+				// inline instructions for github copilot chat
+				"github.copilot.chat.codeGeneration.instructions": [
+					{
+						"text": "This dev container includes `python3` and `pip3` pre-installed and available on the `PATH`, along with the Python language extensions for Python development."
+					}
+				],
+				// link to markdown file with more detailed instructions
+				// "github.copilot.chat.instructions": [
+				// 	{
+				// 		"file": ".vscode/github-copilot-instructions.md"
+				// 	}
+				// ]
 			},
 			"extensions": [
 				// installed by the node feature above
