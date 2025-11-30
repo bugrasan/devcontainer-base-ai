@@ -45,6 +45,24 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
+
+	"containerEnv": {
+		// claude-code disable telemetry
+		// https://code.claude.com/docs/en/data-usage
+		"DISABLE_TELEMETRY": "1",
+		"DISABLE_ERROR_REPORTING": "1",
+		"DISABLE_BUG_COMMAND": "1",
+		// codex: no opt-out telemetry
+		// gh-copilot: no opt-out telemetry
+	},
+	"remoteEnv": {
+		// copy from host env when container starts
+		// "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+		// or use VS Code settings
+		// "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
+	},
+
+
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
@@ -84,7 +102,8 @@
 		"vscode": {
 			"settings": {
 				// "editor.formatOnSave": true,
-				"terminal.integrated.shell.linux": "/bin/bash"
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"telemetry.telemetryLevel": "off",
 			},
 			"extensions": [
 				// installed by the node feature above
