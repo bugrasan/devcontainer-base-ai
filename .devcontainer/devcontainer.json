@@ -54,7 +54,7 @@
 		// !!! Make sure to adjust the target path if you are not using the 'vscode' user
 		// !!! see also "remoteUser" setting below
 		"source=profile,target=/home/vscode,type=volume",
-		"target=/home/vscode/.vscode-server,type=volume"
+		"target=/home/vscode/.vscode-server,type=volume",
 
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
