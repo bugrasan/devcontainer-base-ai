@@ -122,23 +122,91 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
+				// inline instructions for github copilot chat
+				// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
+				
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-a-githubcopilotinstructionsmd-file
+   				"github.copilot.chat.codeGeneration.useInstructionFiles": true,
+				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-an-agentsmd-file
+				"chat.useAgentsMdFile": true,
+			    "chat.useNestedAgentsMdFiles": true,
+				// https://code.visualstudio.com/docs/copilot/chat/chat-sessions#_use-a-custom-agent-with-subagents-experimental
+				"chat.customAgentInSubagents.enabled": true,
 
-				// inline instructions for github copilot chat
-				// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
-				"github.copilot.chat.codeGeneration.instructions": [
-					{
-						"text": "This dev container includes `python3` and `pip3` pre-installed and available on the `PATH`, along with the Python language extensions for Python development."
-					}
-				],
-				// link to markdown file with more detailed instructions
-				// "github.copilot.chat.instructions": [
-				// 	{
-				// 		"file": ".vscode/github-copilot-instructions.md"
-				// 	}
-				// ]
+				// terminal tool auto approve settings
+				// https://code.visualstudio.com/docs/copilot/chat/chat-tools#_autoapprove-all-tools
+				// "chat.tools.terminal.enableAutoApprove": true,
+				// "chat.tools.global.autoApprove": false,
+				// "chat.tools.terminal.autoApprove": {
+				// 	// enable safe commands
+				// 	"cd": true,
+				// 	"echo": true,
+				// 	"ls": true,
+				// 	"pwd": true,
+				// 	"cat": true,
+				// 	"head": true,
+				// 	"tail": true,
+				// 	"findstr": true,
+				// 	"wc": true,
+				// 	"tr": true,
+				// 	"cut": true,
+				// 	"cmp": true,
+				// 	"which": true,
+				// 	"basename": true,
+				// 	"dirname": true,
+				// 	"realpath": true,
+				// 	"readlink": true,
+				// 	"stat": true,
+				// 	"file": true,
+				// 	"du": true,
+				// 	"df": true,
+				// 	"sleep": true,
+				// 	"grep": true,
+				// 	"git status": true,
+				// 	"git log": true,
+				// 	"git show": true,
+				// 	"git diff": true,
+				// 	"git grep": true,
+				// 	"git branch": true,
+
+				// 	// disable potentially destructive commands
+				// 	"/^git branch\\b.*-(d|D|m|M|-delete|-force)\\b/": false,
+				// 	"column": true,
+				// 	"/^column\\b.*-c\\s+[0-9]{4,}/": false,
+				// 	"date": true,
+				// 	"/^date\\b.*(-s|--set)\\b/": false,
+				// 	"find": true,
+				// 	"/^find\\b.*-(delete|exec|execdir|fprint|fprintf|fls|ok|okdir)\\b/": false,
+				// 	"sort": true,
+				// 	"/^sort\\b.*-(o|S)\\b/": false,
+				// 	"tree": true,
+				// 	"/^tree\\b.*-o\\b/": false,
+				// 	"rm": false,
+				// 	"rmdir": false,
+				// 	"del": false,
+				// 	"ri": false,
+				// 	"rd": false,
+				// 	"erase": false,
+				// 	"dd": false,
+				// 	"kill": false,
+				// 	"ps": false,
+				// 	"top": false,
+				// 	"spps": false,
+				// 	"taskkill": false,
+				// 	"curl": false,
+				// 	"wget": false,
+				// 	"irm": false,
+				// 	"iwr": false,
+				// 	"chmod": false,
+				// 	"chown": false,
+				// 	"sp": false,
+				// 	"jq": false,
+				// 	"xargs": false,
+				// 	"eval": false,
+				// }
 			},
 			"extensions": [
 				// installed by the node feature above
