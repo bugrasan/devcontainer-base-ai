@@ -1,0 +1,16 @@
+# Example instructions for suggestions
+- Language: English.
+- Audience: experienced developers working on this repository.
+- Code style:
+  - Use idiomatic, modern language features.
+  - Keep functions small and single-purpose.
+  - Follow existing project linting and formatting rules.
+  - Prefer clear, self-explanatory names over cleverness.
+- Commits & PRs:
+  - Write short, imperative commit messages; link related issue numbers.
+  - Include a brief PR description explaining the why and approach.
+- Security & privacy:
+  - Never include secrets, credentials, or personal data in code or examples.
+- Constraints:
+  - Keep backward compatibility when possible.
+  - Minimize scope of changes and prefer simple, maintainable solutions.

@@ -49,6 +49,7 @@
 
 
 	"mounts": [
+		// FIXME
 		// !!! There is some permission issue:
 		// cannot create directory '/home/vscode/.vscode-server/bin': Permission denied
 		// see also for workaround: https://github.com/microsoft/vscode-remote-release/issues/7690#issuecomment-2761197753
@@ -65,8 +66,8 @@
 		// ${localEnv:USERPROFILE} on Windows
 		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		"source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
-		"source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
-		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 	],
 
 
@@ -94,6 +95,7 @@
 		// Remember!!  they are executed in parallel
 		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
+		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09s-uv' >> ~/devcontainer-post-create.txt",
 
 		// github copilot cli
 		// https://github.com/github/copilot-cli
@@ -104,11 +106,11 @@
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		// "claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
-		"codex": "npm install -g @openai/codex && echo '05-codex' >> ~/devcontainer-post-create.txt",
+		// "codex": "npm install -g @openai/codex && echo '05-codex' >> ~/devcontainer-post-create.txt",
 
 		// BMAD - Bayesian Model for Adaptive Design
 		// Requires interactive shell
@@ -119,7 +121,6 @@
 		"python-openai": "pip install openai && echo '07-python-openai' >> ~/devcontainer-post-create.txt",
 
 		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
-		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -140,6 +141,8 @@
 			    "chat.useNestedAgentsMdFiles": true,
 				// https://code.visualstudio.com/docs/copilot/chat/chat-sessions#_use-a-custom-agent-with-subagents-experimental
 				"chat.customAgentInSubagents.enabled": true,
+				// https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_add-an-mcp-server-from-the-github-mcp-server-registry
+				"chat.mcp.gallery.enabled": true,
 
 				// terminal tool auto approve settings
 				// https://code.visualstudio.com/docs/copilot/chat/chat-tools#_autoapprove-all-tools
