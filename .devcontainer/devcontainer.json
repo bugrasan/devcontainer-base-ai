@@ -35,9 +35,11 @@
 		},
 		// https://github.com/devcontainers/features/blob/main/src/python/devcontainer-feature.json
 		"ghcr.io/devcontainers/features/python:1": {
-			// debian:trixie comes with 3.13
-			"version": "os-provided",
-			//"version": "3.13",
+			// debian:trixie comes with 3.13, however due to this bug
+			// we still need to provide the version if we want to install jupyterlab
+			// https://github.com/devcontainers/features/issues/1403
+			// "version": "os-provided",
+			"version": "3.13",
 			"installJupyterlab": "true"
 		},
 	},
@@ -45,23 +47,26 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	
+
 	"mounts": [
+		// !!! There is some permission issue:
+		// cannot create directory '/home/vscode/.vscode-server/bin': Permission denied
+		// see also for workaround: https://github.com/microsoft/vscode-remote-release/issues/7690#issuecomment-2761197753
 		// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
 		// It creates named volume called profile mounted to /root, which will survive a rebuild.
 		// It next creates an anonymous volume mounted to /root/.vscode-server that gets destroyed on rebuild,
 		//   which allows VS Code to reinstall extensions and dotfiles.
 		// !!! Make sure to adjust the target path if you are not using the 'vscode' user
 		// !!! see also "remoteUser" setting below
-		"source=profile,target=/home/vscode,type=volume",
-		"target=/home/vscode/.vscode-server,type=volume",
+		// "source=profile,target=/home/vscode,type=volume",
+		// "target=/home/vscode/.vscode-server,type=volume",
 
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
-		"source=~/.gitconfig,target=~/.gitconfig,type=bind,readonly,consistency=cached",
-		"source=~/.gitignore,target=~/.gitignore,type=bind,readonly,consistency=cached",
-		"source=~/.ssh/id_ed25519,target=~/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
-		"source=~/.ssh/id_ed25519.pub,target=~/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 	],
 
 
@@ -87,14 +92,14 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
-		"basic-dpkgs": "sudo apt update && sudo apt install -y vim bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
 		// github copilot cli
 		// https://github.com/github/copilot-cli
 		// https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
 		"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
-		
+
 		// anthropic claude code cli
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
@@ -124,7 +129,7 @@
 			"settings": {
 				// inline instructions for github copilot chat
 				// https://code.visualstudio.com/docs/devcontainers/tips-and-tricks
-				
+
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
@@ -243,7 +248,8 @@
 	// !!! if not set to then adjust mounts above accordingly
 	// !!! see also "mounts" setting above
 	"remoteUser": "vscode",
-	
+	"containerUser": "vscode",
+
 	// Mount local .env file into the container
 	// "runArgs": [
 	// 	"--env-file",
