@@ -1,20 +1,10 @@
 # README
 
 ## TODO
-- add `uv`
+- add bun installation
+  https://bun.com/docs/installation#macos-%26-linux
+  `curl -fsSL https://bun.com/install | bash`
 
-```bash
-# https://docs.astral.sh/uv/getting-started/installation/
-# install
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# bash completion for uv and uvx
-echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
-echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
-```
+- add devcontainer `'init': true` to use init; default is false
 
-- fix claude installation to native instead of npm
-
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-```
 
