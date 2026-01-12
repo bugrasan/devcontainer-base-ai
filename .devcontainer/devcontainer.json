@@ -87,40 +87,53 @@
 		// "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
 		// or use VS Code settings
 		// "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
+
+		// revoke-ssh-forwarding: see https://github.com/microsoft/vscode-remote-release/issues/11014
+		"SSH_AUTH_SOCK": "",
 	},
 
 
 	// Use 'postCreateCommand' to run commands after the container is created.
+	// **NOTE**: that these command are executed in parallel, assure they aren't
+	//   dependent to each other
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
-		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
-		"npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
-		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09s-uv' >> ~/devcontainer-post-create.txt",
+		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+
+		// "npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
 		// github copilot cli
 		// https://github.com/github/copilot-cli
 		// https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
-		"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
+		//"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
 
 		// anthropic claude code cli
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		// "claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		//"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
-		// "codex": "npm install -g @openai/codex && echo '05-codex' >> ~/devcontainer-post-create.txt",
+		//"codex": "npm install -g @openai/codex && echo '05-codex' >> ~/devcontainer-post-create.txt",
 
 		// BMAD - Bayesian Model for Adaptive Design
 		// Requires interactive shell
 		//"bmad": "npx bmad-method@alpha install && echo 'doneX' >> ~/devcontainer-post-create.txt",
 
 		// "python-notebook": "pip install notebook",
-		"python-anthropic": "pip install anthropic && echo '06-python-anthropic' >> ~/devcontainer-post-create.txt",
-		"python-openai": "pip install openai && echo '07-python-openai' >> ~/devcontainer-post-create.txt",
+		//"python-anthropic": "pip install anthropic && echo '06-python-anthropic' >> ~/devcontainer-post-create.txt",
+		//"python-openai": "pip install openai && echo '07-python-openai' >> ~/devcontainer-post-create.txt",
 
-		"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
+		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
+		//"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
+		// git based - codeberg can be replaced w/ gitlab.com or github.com
+		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		// http based - codeberg can be replaced w/ gitlab.com or github.com
+		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+
+		// see https://github.com/microsoft/vscode-remote-release/issues/11014
+		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -225,7 +238,7 @@
 				// "ms-python.autopep8",
 
 				// jupyter support - installed by python feature above
-				"ms-toolsai.jupyter",
+				//"ms-toolsai.jupyter",
 				// ms-toolsai.jupyter-keymap will be auto installed as dependency
 				// but will run on local host only, not in container
 
@@ -234,7 +247,7 @@
 				"albert.TabOut",
 
 				// AI extensions
-				"anthropic.claude-code",
+				//"anthropic.claude-code",
 				"github.copilot",
 				"github.copilot-chat",
 				// will be enabled on local host and not in container
@@ -255,7 +268,12 @@
 
 	// Mount local .env file into the container
 	// "runArgs": [
-	// 	"--env-file",
-	// 	"${containerWorkspaceFolder}/.env"
+	// 	  "--env-file",
+	// 	  "${containerWorkspaceFolder}/.env",
+	//    "--privileged",
 	// ]
+    // let the container auto-destroy after it's closed
+    // https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
+    // "runArgs": ["--rm"]
 }
+
