@@ -23,25 +23,38 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	"features": {
-		// https://github.com/devcontainers/features/blob/main/src/common-utils/devcontainer-feature.json
+		// https://github.com/devcontainers/features/blob/main/src/common-utils/
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			// "installZsh": false, // already part of devcontainer 'base' image
 			"username": "vscode"
 		},
-		// https://github.com/devcontainers/features/blob/main/src/node/devcontainer-feature.json
-    	"ghcr.io/devcontainers/features/node:1": {
-			// min required version for github-copilot as of Nov'25
-			"version": "22"
-		},
-		// https://github.com/devcontainers/features/blob/main/src/python/devcontainer-feature.json
-		"ghcr.io/devcontainers/features/python:1": {
-			// debian:trixie comes with 3.13, however due to this bug
-			// we still need to provide the version if we want to install jupyterlab
-			// https://github.com/devcontainers/features/issues/1403
-			// "version": "os-provided",
-			"version": "3.13",
-			"installJupyterlab": "true"
-		},
+		// https://github.com/devcontainers/features/blob/main/src/node/
+    	// "ghcr.io/devcontainers/features/node:1": {
+		// 	// min required version for github-copilot as of Nov'25
+		// 	"version": "22"
+		// },
+		// https://github.com/devcontainers/features/blob/main/src/python/
+		// "ghcr.io/devcontainers/features/python:1": {
+		// 	// debian:trixie comes with 3.13, however due to this bug
+		// 	// we still need to provide the version if we want to install jupyterlab
+		// 	// https://github.com/devcontainers/features/issues/1403
+		// 	// "version": "os-provided",
+		// 	"version": "3.13",
+		// 	"installJupyterlab": "true"
+		// },
+		// https://github.com/devcontainers/features/blob/main/src/github-cli/
+		// "features": {
+		// 	"ghcr.io/devcontainers/features/github-cli:1": {}
+		// }
+		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
+		// "features": {
+		// 	"ghcr.io/devcontainers/features/copilot-cli:1": {}
+		// }
+		// https://github.com/devcontainers/features/tree/main/src/azure-cli
+		// "features": {
+		// 	// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
+		// 	"ghcr.io/devcontainers/features/azure-cli:1": {}
+		// }
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -66,6 +79,7 @@
 		// ${localEnv:USERPROFILE} on Windows
 		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		"source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/keepassxc-dev.kdbx,target=/home/vscode/keepassxc-dev.kdbx,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 	],
@@ -75,9 +89,9 @@
 	"containerEnv": {
 		// claude-code disable telemetry
 		// https://code.claude.com/docs/en/data-usage
-		"DISABLE_TELEMETRY": "1",
-		"DISABLE_ERROR_REPORTING": "1",
-		"DISABLE_BUG_COMMAND": "1",
+		// "DISABLE_TELEMETRY": "1",
+		// "DISABLE_ERROR_REPORTING": "1",
+		// "DISABLE_BUG_COMMAND": "1",
 
 		// codex: no opt-out telemetry
 		// gh-copilot: no opt-out telemetry
@@ -88,7 +102,7 @@
 		// or use VS Code settings
 		// "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
 
-		// revoke-ssh-forwarding: see https://github.com/microsoft/vscode-remote-release/issues/11014
+		// revoke unwanted ssh-forwarding: see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"SSH_AUTH_SOCK": "",
 	},
 
@@ -102,7 +116,7 @@
 
 		// "npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
-		// github copilot cli
+		// github-copilot-cli
 		// https://github.com/github/copilot-cli
 		// https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
 		//"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
@@ -130,7 +144,7 @@
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
 		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 		// http based - codeberg can be replaced w/ gitlab.com or github.com
-		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply codeberg.org:bugrasan/dotfiles && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
@@ -151,6 +165,7 @@
    				"github.copilot.chat.codeGeneration.useInstructionFiles": true,
 				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-an-agentsmd-file
 				"chat.useAgentsMdFile": true,
+				"chat.useAgentSkills": true,
 			    "chat.useNestedAgentsMdFiles": true,
 				// https://code.visualstudio.com/docs/copilot/chat/chat-sessions#_use-a-custom-agent-with-subagents-experimental
 				"chat.customAgentInSubagents.enabled": true,
@@ -270,10 +285,10 @@
 	// "runArgs": [
 	// 	  "--env-file",
 	// 	  "${containerWorkspaceFolder}/.env",
-	//    "--privileged",
+	// 	  "--privileged",
+		// let the container auto-destroy after it's closed
+		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
+	//	"--rm",
 	// ]
-    // let the container auto-destroy after it's closed
-    // https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
-    // "runArgs": ["--rm"]
 }
 
