@@ -3,6 +3,7 @@
 {
 	// "name": "Node.js & TypeScript",
 	"name": "custom build - one size fits all",
+	// list of images: https://github.com/devcontainers/images/tree/main/src
 
 	// https://github.com/devcontainers/images/tree/main/src/python
 	// "image": "mcr.microsoft.com/devcontainers/python:3.13",
