@@ -19,6 +19,9 @@
 	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu",				// comes with node:v18, python:v3.12
 	// "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.05",		// available only LTEs e.g. 24.05, 22.04
 
+	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
+	// "image": "quay.io/toolbx/arch-toolbox:latest",
+
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -77,9 +80,13 @@
 
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
-		"source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
-		"source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
-		// "source=${localEnv:HOME}/keepassxc-dev.kdbx,target=/home/vscode/keepassxc-dev.kdbx,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
+		// **IMPORTANT**: keepassxc creates a new file on write and replaces the old one - this is a global setting for keepassxc
+		// this can be adjusted with writing directly to the existing file, but it is flagged as "dangerous"
+		// alternative to share a folder instead of a single file
+		// TODO: create feature request to make this database specific option
+		// "source=${localEnv:HOME}/code/devcont.kdbx,target=/home/vscode/devcont.kdbx,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 	],
@@ -112,7 +119,10 @@
 	//   dependent to each other
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
-		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf jq gnupg2 pass && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		// Debian
+		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		// Ubuntu
+		//"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 
 		// "npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
@@ -125,7 +135,7 @@
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		//"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -140,11 +150,13 @@
 		//"python-openai": "pip install openai && echo '07-python-openai' >> ~/devcontainer-post-create.txt",
 
 		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
+
 		//"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
+
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
-		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 		// http based - codeberg can be replaced w/ gitlab.com or github.com
-		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" init --apply codeberg.org:bugrasan/dotfiles && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
@@ -282,13 +294,13 @@
 	"containerUser": "vscode",
 
 	// Mount local .env file into the container
-	// "runArgs": [
+	"runArgs": [
 	// 	  "--env-file",
 	// 	  "${containerWorkspaceFolder}/.env",
 	// 	  "--privileged",
 		// let the container auto-destroy after it's closed
 		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
-	//	"--rm",
-	// ]
+		"--rm",
+	]
 }
 
