@@ -32,6 +32,15 @@
 			// "installZsh": false, // already part of devcontainer 'base' image
 			"username": "vscode"
 		},
+		// https://github.com/devcontainers/features/tree/main/src/desktop-lite
+		// "ghcr.io/devcontainers/features/desktop-lite:1": {
+		// 	// default password 'vscode'
+		// 	// "password": "vscode",
+		// 	// Enter a port for the desktop VNC server (TigerVNC)
+		// 	// "vncPort": 5901,
+		// 	// Enter a port for the VNC web client (noVNC)
+		// 	// "webPort": 6080,
+		// },
 		// https://github.com/devcontainers/features/blob/main/src/node/
     	// "ghcr.io/devcontainers/features/node:1": {
 		// 	// min required version for github-copilot as of Nov'25
@@ -63,6 +72,21 @@
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
+	// **VNC for web**
+	// "forwardPorts": [6080],
+	// "portsAttributes": {
+	// 	"6080": {
+	// 		"label": "desktop"
+	// 	}
+	// }
+	// **VNC for TigerVNC
+	// "forwardPorts": [5901],
+	// "appPort": 5901,
+	// "portsAttributes": {
+	// 	"5901": {
+	// 		"label": "VNC desktop",
+	// 	}
+	// },
 
 
 	"mounts": [
@@ -83,13 +107,20 @@
 		// ${localEnv:USERPROFILE} on Windows
 		// "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
+
 		// **IMPORTANT**: keepassxc creates a new file on write and replaces the old one - this is a global setting for keepassxc
 		// this can be adjusted with writing directly to the existing file, but it is flagged as "dangerous"
 		// alternative to share a folder instead of a single file
 		// TODO: create feature request to make this database specific option
 		// "source=${localEnv:HOME}/code/devcont.kdbx,target=/home/vscode/devcont.kdbx,type=bind,readonly,consistency=cached",
+
+		// !!! SSH keys are sensitive, so they should be read-only and cached for better performance
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+
+		// Claude Code CLI needs to write to these files, so they cannot be read-only
+		// "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+		// "source=${localEnv:HOME}/.claude.json,target=/home/vscode/.claude.json,type=bind,consistency=cached",
 	],
 
 
@@ -100,6 +131,12 @@
 		// "DISABLE_TELEMETRY": "1",
 		// "DISABLE_ERROR_REPORTING": "1",
 		// "DISABLE_BUG_COMMAND": "1",
+		// "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+		// "CLAUDE_CONFIG_FILE": "/home/vscode/.claude.json",
+		// Authentication token => or use .env file and "remoteEnv" setting below
+		// Token can be generated with `claude setup-token`
+		// "CLAUDE_CODE_OAUTH_TOKEN": "",
+		// "ANTHROPIC_AUTH_TOKEN": "",
 
 		// codex: no opt-out telemetry
 		// gh-copilot: no opt-out telemetry
@@ -275,7 +312,9 @@
 				"albert.TabOut",
 
 				// AI extensions
-				//"anthropic.claude-code",
+				// "anthropic.claude-code",
+				
+				// VS Code Copilot
 				"github.copilot",
 				"github.copilot-chat",
 				// will be enabled on local host and not in container
@@ -291,17 +330,19 @@
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// !!! if not set to then adjust mounts above accordingly
 	// !!! see also "mounts" setting above
-	"remoteUser": "vscode",
 	"containerUser": "vscode",
+	"remoteUser": "vscode",
 
 	// Mount local .env file into the container
 	"runArgs": [
-	// 	  "--env-file",
-	// 	  "${containerWorkspaceFolder}/.env",
-	// 	  "--privileged",
+		// .env file
+		// "--env-file", ".env",
+		// privileged access e.g. USB devices
+		// "--privileged",
 		// let the container auto-destroy after it's closed
 		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
 		"--rm",
+		// vnc for desktop-lite feature
+		// "--shm-size=1g",
 	]
 }
-
