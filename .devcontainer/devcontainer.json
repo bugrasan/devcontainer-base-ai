@@ -158,7 +158,7 @@
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
 		// Debian
-		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf git-delta xh lazygit watchexec just semgrep jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		// Ubuntu
 		//"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 
@@ -198,6 +198,9 @@
 
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
+
+		// simplifies claude; debian and ubuntu don't have duckdb in their repos, so we need to install it manually
+		// "duckdb": "curl https://install.duckdb.org | sh && echo '12-duckdb' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
