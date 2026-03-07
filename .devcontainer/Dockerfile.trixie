@@ -1,0 +1,49 @@
+FROM debian:trixie
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install the same Debian packages configured in devcontainer.json.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        sudo \
+        vim \
+        vim-scripts \
+        vim-doc \
+        shellcheck \
+        eza \
+        bat \
+        fd-find \
+        ripgrep \
+        fzf \
+        git-delta \
+        xh \
+        lazygit \
+        watchexec \
+        just \
+        semgrep \
+        jq \
+        gnupg2 \
+        pass \
+        keepassxc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a regular user for interactive use.
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} \
+    && usermod -aG sudo ${USERNAME} \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME}
+
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}
+
+# Install chezmoi and apply the same dotfiles source used in devcontainer.json.
+RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
+
+CMD ["bash"]

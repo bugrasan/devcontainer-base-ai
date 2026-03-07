@@ -89,6 +89,45 @@ git checkout -p devcontainer-upstream/main -- .devcontainer/devcontainer.json
 
 This prompts you to accept or reject each change individually.
 
+## Alternative: Plain Docker (Debian Trixie)
+
+An alternative image definition is available at `.devcontainer/Dockerfile.trixie`.
+It installs the same Debian packages as `devcontainer.json`, creates a non-root
+`vscode` user, and applies dotfiles via `chezmoi`.
+
+### Build
+
+```bash
+docker build -f .devcontainer/Dockerfile.trixie -t trixie-dev .
+```
+
+Optional: customize user name/uid/gid at build time:
+
+```bash
+docker build \
+   -f .devcontainer/Dockerfile.trixie \
+   -t trixie-dev \
+   --build-arg USERNAME=vscode \
+   --build-arg USER_UID=1000 \
+   --build-arg USER_GID=1000 \
+   .
+```
+
+### Run
+
+```bash
+docker run --rm -it trixie-dev
+```
+
+Optional: mount the current project into the container:
+
+```bash
+docker run --rm -it \
+   -v "$(pwd):/workspace" \
+   -w /workspace \
+   trixie-dev
+```
+
 ## Quick Reference
 
 | Task | Command |
