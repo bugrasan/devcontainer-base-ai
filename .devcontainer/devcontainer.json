@@ -23,6 +23,11 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
+	// either image or self-build docker image
+	// "build": {
+	// 	"dockerfile": "Dockerfile.trixie"
+	// },
+
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -56,18 +61,14 @@
 		// 	"installJupyterlab": "true"
 		// },
 		// https://github.com/devcontainers/features/blob/main/src/github-cli/
-		// "features": {
-		// 	"ghcr.io/devcontainers/features/github-cli:1": {}
-		// }
+		// "ghcr.io/devcontainers/features/github-cli:1": {},
 		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
-		// "features": {
-		// 	"ghcr.io/devcontainers/features/copilot-cli:1": {}
-		// }
+		// "ghcr.io/devcontainers/features/copilot-cli:1": {},
 		// https://github.com/devcontainers/features/tree/main/src/azure-cli
-		// "features": {
-		// 	// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
-		// 	"ghcr.io/devcontainers/features/azure-cli:1": {}
-		// }
+		// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
+		// 	"ghcr.io/devcontainers/features/azure-cli:1": {},
+		// https://github.com/devcontainers/features/tree/main/src/aws-cli
+		// "ghcr.io/devcontainers/features/aws-cli:1": {},
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -88,6 +89,20 @@
 	// 	}
 	// },
 
+	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
+	// initializeCommand runs on the HOST before the container starts.
+	// Must be a string (not array) so it runs through /bin/sh -c.
+	"initializeCommand": {
+		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
+		// Inside the container /workspaces/ is not writable by the vscode user, so we bind-mount
+		// the folder from the host to avoid permission errors.
+		"worktrees": "mkdir -p \"${localWorkspaceFolder}.worktrees\"",
+		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
+		// uncomment for a single rebuild then comment it out again
+		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",
+		// Timezone - align to local timezone
+		// "TZ": "TZ_VAL=$(readlink /etc/localtime | sed 's|.*/zoneinfo/||') && (grep -q '^TZ=' .devcontainer/.env && sed -i '' \"s|^TZ=.*|TZ=$TZ_VAL|\" .devcontainer/.env || echo \"TZ=$TZ_VAL\" >> .devcontainer/.env)",
+	},
 
 	"mounts": [
 		// FIXME
@@ -108,6 +123,14 @@
 		// "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
 
+		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
+		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
+
+		// **IMPORTANT**:
+		// to enabled named volumes that survive container recreation, we moved to Dockerfile;
+		// to use copy permission on first mount of the named volumes, since they are always created with root permissions
+		"source=DevContVol-${devcontainerId},target=/home/vscode,type=volume",
+
 		// **IMPORTANT**: keepassxc creates a new file on write and replaces the old one - this is a global setting for keepassxc
 		// this can be adjusted with writing directly to the existing file, but it is flagged as "dangerous"
 		// alternative to share a folder instead of a single file
@@ -126,6 +149,19 @@
 
 	// set env vars for inside the container
 	"containerEnv": {
+		// FIXME: use initializeCommand to write to .devcontainer/.env and use runArgs;
+		// but it is way too complicated, for now this is good enough
+		// timezone fix of colima docker on macos
+		"TZ": "Europe/Zurich",
+		// setting the default visual text editor
+		"EDITOR": "vim",
+		"VISUAL": "code",
+
+		// github-cli
+		// https://cli.github.com/telemetry
+		// "GH_TELEMETRY": "false",
+		// "DO_NOT_TRACK": "true",
+
 		// claude-code disable telemetry
 		// https://code.claude.com/docs/en/data-usage
 		// "DISABLE_TELEMETRY": "1",
@@ -158,16 +194,13 @@
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
 		// Debian
-		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf git-delta xh lazygit just jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
+		"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza bat fd-find ripgrep fzf git-delta xh lazygit just jq gnupg2 pass keepassxc ffmpeg fastfetch && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 		// Ubuntu
 		//"basic-dpkgs": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-basic-dpkg' >> ~/devcontainer-post-create.txt",
 
-		// "npm-lint": "npm install -g eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
-
-		// github-copilot-cli
-		// https://github.com/github/copilot-cli
-		// https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
-		//"gh-copilot": "npm install -g @github/copilot && echo '03-gh-copilot' >> ~/devcontainer-post-create.txt",
+		// editorconfig is required by the vscode extension
+		// mermaid to save as picture
+		// "npm-lint": "npm install -g editorconfig eslint typescript && echo '02-npm-lint' >> ~/devcontainer-post-create.txt",
 
 		// anthropic claude code cli
 		// https://code.claude.com/docs/en/overview
@@ -201,6 +234,9 @@
 
 		// simplifies claude; debian and ubuntu don't have duckdb in their repos, so we need to install it manually
 		// "duckdb": "curl https://install.duckdb.org | sh && echo '12-duckdb' >> ~/devcontainer-post-create.txt",
+
+		// disable github telemetry
+		"github-cli-telemetry": "gh config set telemetry disabled || echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -214,6 +250,13 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+
+				// Keep speech extensions on the local UI side; avoid loading them in remote container host.
+				"remote.extensionKind": {
+					"ms-vscode.vscode-speech": "ui",
+					"ms-vscode.vscode-speech-language-pack-de-de": "ui"
+				},
+
 				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-a-githubcopilotinstructionsmd-file
    				"github.copilot.chat.codeGeneration.useInstructionFiles": true,
 				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-an-agentsmd-file
@@ -229,75 +272,15 @@
 				// https://code.visualstudio.com/docs/copilot/chat/chat-tools#_autoapprove-all-tools
 				// "chat.tools.terminal.enableAutoApprove": true,
 				// "chat.tools.global.autoApprove": false,
-				// "chat.tools.terminal.autoApprove": {
-				// 	// enable safe commands
-				// 	"cd": true,
-				// 	"echo": true,
-				// 	"ls": true,
-				// 	"pwd": true,
-				// 	"cat": true,
-				// 	"head": true,
-				// 	"tail": true,
-				// 	"findstr": true,
-				// 	"wc": true,
-				// 	"tr": true,
-				// 	"cut": true,
-				// 	"cmp": true,
-				// 	"which": true,
-				// 	"basename": true,
-				// 	"dirname": true,
-				// 	"realpath": true,
-				// 	"readlink": true,
-				// 	"stat": true,
-				// 	"file": true,
-				// 	"du": true,
-				// 	"df": true,
-				// 	"sleep": true,
-				// 	"grep": true,
-				// 	"git status": true,
-				// 	"git log": true,
-				// 	"git show": true,
-				// 	"git diff": true,
-				// 	"git grep": true,
-				// 	"git branch": true,
-
-				// 	// disable potentially destructive commands
-				// 	"/^git branch\\b.*-(d|D|m|M|-delete|-force)\\b/": false,
-				// 	"column": true,
-				// 	"/^column\\b.*-c\\s+[0-9]{4,}/": false,
-				// 	"date": true,
-				// 	"/^date\\b.*(-s|--set)\\b/": false,
-				// 	"find": true,
-				// 	"/^find\\b.*-(delete|exec|execdir|fprint|fprintf|fls|ok|okdir)\\b/": false,
-				// 	"sort": true,
-				// 	"/^sort\\b.*-(o|S)\\b/": false,
-				// 	"tree": true,
-				// 	"/^tree\\b.*-o\\b/": false,
-				// 	"rm": false,
-				// 	"rmdir": false,
-				// 	"del": false,
-				// 	"ri": false,
-				// 	"rd": false,
-				// 	"erase": false,
-				// 	"dd": false,
-				// 	"kill": false,
-				// 	"ps": false,
-				// 	"top": false,
-				// 	"spps": false,
-				// 	"taskkill": false,
-				// 	"curl": false,
-				// 	"wget": false,
-				// 	"irm": false,
-				// 	"iwr": false,
-				// 	"chmod": false,
-				// 	"chown": false,
-				// 	"sp": false,
-				// 	"jq": false,
-				// 	"xargs": false,
-				// 	"eval": false,
-				// }
 			},
 			"extensions": [
+				// basic extensions
+				"EditorConfig.EditorConfig",
+				"albert.TabOut",
+				// git extensions
+				"mhutchie.git-graph",
+				"eamodio.gitlens",
+
 				// installed by the node feature above
 				// "dbaeumer.vscode-eslint",
 				// installed by the python feature above
@@ -317,12 +300,9 @@
 				// AI extensions
 				// "anthropic.claude-code",
 				
-				// VS Code Copilot
-				"github.copilot",
-				"github.copilot-chat",
-				// will be enabled on local host and not in container
-				"ms-vscode.vscode-speech",
-				"ms-vscode.vscode-speech-language-pack-de-de",
+				// VS Code Copilot - legacy vscode < v1.116
+				// "github.copilot",
+				// "github.copilot-chat",
 
 				// vscode recommended extensions for devcontainers
 				"mutantdino.resourcemonitor",
