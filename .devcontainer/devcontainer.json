@@ -236,7 +236,10 @@
 		// "duckdb": "curl https://install.duckdb.org | sh && echo '12-duckdb' >> ~/devcontainer-post-create.txt",
 
 		// disable github telemetry
-		"github-cli-telemetry": "gh config set telemetry disabled || echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
+		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
+
+		// install pi.dev 
+		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
