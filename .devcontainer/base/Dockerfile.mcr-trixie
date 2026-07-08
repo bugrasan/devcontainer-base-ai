@@ -41,7 +41,7 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local/ \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cache/ \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/ \
-    && chmod 600 /home/${USERNAME}/.ssh
+    && chmod 700 /home/${USERNAME}/.ssh
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}

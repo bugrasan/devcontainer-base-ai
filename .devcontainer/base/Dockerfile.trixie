@@ -43,7 +43,7 @@ USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
 # Create directories
-RUN mkdir ~/.ssh && chmod 600 ~/.ssh
+RUN mkdir ~/.ssh && chmod 700 ~/.ssh
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
 
