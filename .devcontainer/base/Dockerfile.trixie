@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install the same Debian packages configured in devcontainer.json.
 # NOTE: semgrep and watchexec are not packaged for Debian trixie's apt repos, so they are omitted here.
 RUN apt-get update \
+    && apt-get -y upgrade \
     && apt-get install -y --no-install-recommends \
         bat \
         ca-certificates \

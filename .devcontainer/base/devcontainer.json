@@ -15,7 +15,9 @@
 	"features": {
 		// https://github.com/devcontainers/features/blob/main/src/common-utils/
 		"ghcr.io/devcontainers/features/common-utils:2": {
-			"username": "vscode"
+			"username": "vscode",
+			// already done in container
+			"upgradePackages": false,
 		},
 
 		// https://github.com/devcontainers/features/tree/main/src/sshd
