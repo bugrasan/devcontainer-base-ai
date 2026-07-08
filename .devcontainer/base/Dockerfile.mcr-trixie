@@ -43,7 +43,7 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
     && chmod 600 /home/${USERNAME}/.ssh
 
 USER ${USERNAME}
-# WORKDIR /home/${USERNAME}
+WORKDIR /home/${USERNAME}
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
