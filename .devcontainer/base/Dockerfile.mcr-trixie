@@ -46,6 +46,12 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
+# uv (and anything else installed under ~/.local/bin) needs this on PATH for ALL
+# shells, including non-interactive/non-login ones (e.g. `docker run image bash -c`
+# in the smoke-test) - the uv installer only offers to add it to shell rc files,
+# which aren't sourced in that case.
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
+
 # Bake in development tools for faster container startup.
 # NOTE: pi.dev and claude.ai installers require npm, which is only provided later by the
 # devcontainer 'node' Feature (Features are layered on top of this Dockerfile at build time,
