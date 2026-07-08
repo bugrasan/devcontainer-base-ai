@@ -244,8 +244,9 @@
 		// anthropic claude code cli
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
+		// NOTE: needs npm (from the 'node' Feature), so it must run here, not baked into the base Dockerfile
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		// "claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -253,6 +254,7 @@
 
 		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
 
+		// uv is baked into the base image's Dockerfile (doesn't need npm), so no need to run it here
 		// "uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
@@ -269,8 +271,9 @@
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 
-		// install pi.dev 
-		// "pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
+		// install pi.dev
+		// NOTE: needs npm (from the 'node' Feature), so it must run here, not baked into the base Dockerfile
+		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 

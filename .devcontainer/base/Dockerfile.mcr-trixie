@@ -46,10 +46,11 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-# Bake in development tools for faster container startup
+# Bake in development tools for faster container startup.
+# NOTE: pi.dev and claude.ai installers require npm, which is only provided later by the
+# devcontainer 'node' Feature (Features are layered on top of this Dockerfile at build time,
+# so npm isn't available yet here) - install them via 'postCreateCommand' instead.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-RUN curl -fsSL https://pi.dev/install.sh | sh
-RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 # RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
