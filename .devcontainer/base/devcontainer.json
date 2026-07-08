@@ -8,7 +8,7 @@
 
 	// Same Dockerfile used by the root ../devcontainer.json's commented-out "build" alternative.
 	"build": {
-		"dockerfile": "Dockerfile.trixie"
+		"dockerfile": "Dockerfile.mcr-trixie"
 	},
 
 	// Same Features as the root devcontainer.json, baked into the image at build time.

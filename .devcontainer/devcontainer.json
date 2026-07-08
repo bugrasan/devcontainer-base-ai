@@ -168,7 +168,7 @@
 
 		// !!! SSH keys are sensitive, so they should be read-only and cached for better performance
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
-		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 
 		// Claude Code CLI needs to write to these files, so they cannot be read-only
 		// "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
@@ -263,6 +263,9 @@
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
 
+		// see https://github.com/microsoft/vscode/issues/324870
+		"authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
+
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 
@@ -281,6 +284,10 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+
+				// see https://www.danieldemmel.me/blog/coding-agents-in-secured-vscode-dev-containers
+				"dev.containers.dockerCredentialHelper": false,
+				"dev.containers.copyGitConfig":false,
 
 				// Keep speech extensions on the local UI side; avoid loading them in remote container host.
 				"remote.extensionKind": {
