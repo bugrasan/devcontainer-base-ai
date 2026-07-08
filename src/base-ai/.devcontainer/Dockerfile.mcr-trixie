@@ -1,0 +1,50 @@
+FROM mcr.microsoft.com/devcontainers/base:trixie
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install the same Debian packages configured in devcontainer.json.
+# NOTE: semgrep and watchexec are not packaged for Debian trixie's apt repos, so they are omitted here.
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get install -y --no-install-recommends \
+        bat \
+        ca-certificates \
+        curl \
+        eza \
+        fastfetch \
+        fd-find \
+        fzf \
+        git-delta \
+        gnupg2 \
+        jq \
+        just \
+        lazygit \
+        pass \
+        ripgrep \
+        shellcheck \
+        sudo \
+        vim \
+        vim-doc \
+        vim-scripts \
+        xh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a user directories to fix bind-mount permissions
+RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
+    && mkdir -p /home/${USERNAME}/.local \
+    && mkdir -p /home/${USERNAME}/.cache \
+    && mkdir -p /home/${USERNAME}/.ssh \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.vscode-server/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cache/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/ \
+    && chmod 700 /home/${USERNAME}/.ssh
+
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}
+
+# Install chezmoi and apply the same dotfiles source used in devcontainer.json.
+RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
