@@ -7,6 +7,7 @@ ARG USER_GID=${USER_UID}
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install the same Debian packages configured in devcontainer.json.
+# NOTE: semgrep and watchexec are not packaged for Debian trixie's apt repos, so they are omitted here.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         bat \
@@ -23,13 +24,11 @@ RUN apt-get update \
         lazygit \
         pass \
         ripgrep \
-        semgrep \
         shellcheck \
         sudo \
         vim \
         vim-doc \
         vim-scripts \
-        watchexec \
         xh \
     && rm -rf /var/lib/apt/lists/*
 
