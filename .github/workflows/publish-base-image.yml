@@ -6,6 +6,7 @@ name: "Publish :base Dev Container Image"
 on:
   schedule:
     - cron: "54 6 * * 6"
+  workflow_dispatch: {}
 
 jobs:
   # Native per-arch builds using GitHub's hosted amd64/arm64 runners - no QEMU
