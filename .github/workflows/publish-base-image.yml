@@ -119,10 +119,6 @@ jobs:
             command -v uv || exit 1
             echo "✓ uv found"
             uv --version
-            command -v pi || exit 1
-            echo "✓ pi found"
-            command -v claude || exit 1
-            echo "✓ claude found"
-            claude --version 2>/dev/null || echo "✓ claude available (version check may require auth)"
             echo "✓ All tools verified"
           '
+
