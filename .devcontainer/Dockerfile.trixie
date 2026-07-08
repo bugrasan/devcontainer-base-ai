@@ -9,28 +9,27 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install the same Debian packages configured in devcontainer.json.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        bat \
         ca-certificates \
         curl \
-        sudo \
-        vim \
-        vim-scripts \
-        vim-doc \
-        shellcheck \
         eza \
-        bat \
         fd-find \
-        ripgrep \
         fzf \
         git-delta \
-        xh \
-        lazygit \
-        watchexec \
-        just \
-        semgrep \
-        jq \
         gnupg2 \
+        jq \
+        just \
+        lazygit \
         pass \
-        keepassxc \
+        ripgrep \
+        semgrep \
+        shellcheck \
+        sudo \
+        vim \
+        vim-doc \
+        vim-scripts \
+        watchexec \
+        xh \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a regular user for interactive use.
@@ -44,6 +43,6 @@ USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
-RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
+#RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
 
 CMD ["bash"]
