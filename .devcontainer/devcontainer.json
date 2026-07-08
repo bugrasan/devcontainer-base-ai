@@ -22,6 +22,11 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
+	// either image or self-build docker image
+	// "build": {
+	// 	"dockerfile": "Dockerfile.trixie"
+	// },
+
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -71,6 +76,9 @@
 		// https://github.com/devcontainers/features/tree/main/src/azure-cli
 		// 	// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
 		// 	"ghcr.io/devcontainers/features/azure-cli:1": {},
+
+		// https://github.com/devcontainers/features/tree/main/src/aws-cli
+		// "ghcr.io/devcontainers/features/aws-cli:1": {},
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -98,8 +106,6 @@
 			"onAutoForward": "notify"
 		}
 	},
-
-
 
 	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
 	// initializeCommand runs on the HOST before the container starts.
@@ -140,6 +146,14 @@
 		// "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
 
+		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
+		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
+
+		// **IMPORTANT**:
+		// to enabled named volumes that survive container recreation, we moved to Dockerfile;
+		// to use copy permission on first mount of the named volumes, since they are always created with root permissions
+		"source=DevContVol-${devcontainerId},target=/home/vscode,type=volume",
+
 		// **IMPORTANT**: keepassxc creates a new file on write and replaces the old one - this is a global setting for keepassxc
 		// this can be adjusted with writing directly to the existing file, but it is flagged as "dangerous"
 		// alternative to share a folder instead of a single file
@@ -158,6 +172,14 @@
 
 	// set env vars for inside the container
 	"containerEnv": {
+		// FIXME: use initializeCommand to write to .devcontainer/.env and use runArgs;
+		// but it is way too complicated, for now this is good enough
+		// timezone fix of colima docker on macos
+		"TZ": "Europe/Zurich",
+		// setting the default visual text editor
+		"EDITOR": "vim",
+		"VISUAL": "code",
+
 		// for sshd feature - see also variable 'forwardPorts'
 		// the SSHD_PORT must match with the one in 'forwardPorts'
 		"SSHD_PORT": "2223",
@@ -205,7 +227,7 @@
 	"postCreateCommand": {
 		// Remember!!  they are executed in parallel
 		// Debian - when microsoft image is used
-		"debian-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends bat ca-certificates curl eza fd-find fzf git-delta gnupg2 jq just lazygit pass ripgrep semgrep shellcheck vim vim-doc vim-scripts watchexec xh && sudo apt clean && echo '01-debian-dpkg' >> ~/devcontainer-post-create.txt",
+		"debian-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends bat ca-certificates curl eza fastfetch fd-find fzf git-delta gnupg2 jq just lazygit pass ripgrep semgrep shellcheck vim vim-doc vim-scripts watchexec xh && sudo apt clean && echo '01-debian-dpkg' >> ~/devcontainer-post-create.txt",
 		// Debian - when own image/Dockerfile is used
 		//"additional-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends bat && sudo apt clean && echo '01-additional-dpkg' >> ~/devcontainer-post-create.txt",
 		// Ubuntu
@@ -235,6 +257,11 @@
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
 
+		// disable github telemetry
+		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
+
+		// install pi.dev 
+		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -248,6 +275,13 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+
+				// Keep speech extensions on the local UI side; avoid loading them in remote container host.
+				"remote.extensionKind": {
+					"ms-vscode.vscode-speech": "ui",
+					"ms-vscode.vscode-speech-language-pack-de-de": "ui"
+				},
+
 				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-a-githubcopilotinstructionsmd-file
    				"github.copilot.chat.codeGeneration.useInstructionFiles": true,
 				// https://code.visualstudio.com/docs/copilot/customization/custom-instructions#_use-an-agentsmd-file
@@ -263,6 +297,13 @@
 				"chat.tools.global.autoApprove": true,
 			},
 			"extensions": [
+				// basic extensions
+				"EditorConfig.EditorConfig",
+				"albert.TabOut",
+				// git extensions
+				"mhutchie.git-graph",
+				"eamodio.gitlens",
+
 				// installed by the node feature above
 				// "dbaeumer.vscode-eslint",
 				// installed by the python feature above
