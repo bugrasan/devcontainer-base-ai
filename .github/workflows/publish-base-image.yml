@@ -3,7 +3,14 @@ name: "Publish :base Dev Container Image"
 # Scheduled rebuild only - keeps the base image's OS/apt packages and Features
 # up to date. GitHub Actions schedules are UTC-only (no DST adjustment).
 # 06:54 UTC every Saturday.
+# Also rebuild when the base definition or this workflow changes.
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".devcontainer/base/**"
+      - ".github/workflows/publish-base-image.yml"
   schedule:
     - cron: "54 6 * * 6"
   workflow_dispatch: {}
@@ -72,3 +79,50 @@ jobs:
         with:
           imageName: ghcr.io/bugrasan/devcontainer-base-ai/base
           platforms: linux/amd64,linux/arm64
+
+  # Verify the published multi-arch image contains the expected tools.
+  smoke-test:
+    needs: manifest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image and verify tools
+        run: |
+          docker pull ghcr.io/bugrasan/devcontainer-base-ai/base:latest
+          docker run --rm ghcr.io/bugrasan/devcontainer-base-ai/base:latest bash -c '
+            set -e
+            echo "=== Smoke Test ==="
+            command -v node || exit 1
+            echo "✓ node found"
+            node --version
+            command -v python3 || exit 1
+            echo "✓ python3 found"
+            python3 --version
+            command -v gh || exit 1
+            echo "✓ gh found"
+            gh --version
+            command -v copilot || exit 1
+            echo "✓ copilot found"
+            copilot --version
+            command -v uv || exit 1
+            echo "✓ uv found"
+            uv --version
+            command -v pi || exit 1
+            echo "✓ pi found"
+            command -v claude || exit 1
+            echo "✓ claude found"
+            claude --version 2>/dev/null || echo "✓ claude available (version check may require auth)"
+            echo "✓ All tools verified"
+          '

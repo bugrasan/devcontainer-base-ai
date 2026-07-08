@@ -329,10 +329,6 @@
 				// ms-toolsai.jupyter-keymap will be auto installed as dependency
 				// but will run on local host only, not in container
 
-				// my basic extensions
-				"EditorConfig.EditorConfig",
-				"albert.TabOut",
-
 				// AI extensions
 				"anthropic.claude-code",
 				

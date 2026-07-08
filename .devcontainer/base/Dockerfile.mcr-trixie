@@ -46,5 +46,10 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
+# Bake in development tools for faster container startup
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -fsSL https://pi.dev/install.sh | sh
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
-RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
+# RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles

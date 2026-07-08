@@ -6,7 +6,7 @@ This repo provides three related things:
 
 1. **[.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)** — the one-size-fits-all dev container used to develop *this* repo (and copyable into other projects, see [Usage](#usage) below).
 2. **[src/base-ai/](src/base-ai/)** — the same configuration packaged as a [Dev Container Template](https://containers.dev/implementors/templates/), published to GHCR (not listed on the public [containers.dev](https://containers.dev/templates) index). See [Dev Container Template](#dev-container-template-base-ai).
-3. **[.devcontainer/base/](.devcontainer/base/)** — the definition used to bake `Dockerfile.trixie` + the Features below into a pre-built image, rebuilt every Saturday and consumed by (1) via its `image` property. See [The `:base` Image](#the-base-image).
+3. **[.devcontainer/base/](.devcontainer/base/)** — the definition used to bake `Dockerfile.mcr-trixie` + the Features below into a pre-built image, rebuilt every Saturday and consumed by (1) via its `image` property. See [The `:base` Image](#the-base-image).
 
 ## Usage
 
@@ -166,7 +166,7 @@ This can't be reliably automated from the workflow with the default
 [.devcontainer/base/devcontainer.json](.devcontainer/base/devcontainer.json)
 defines a minimal devcontainer used only for building — it's not meant to be
 opened in VS Code directly. It reuses
-[.devcontainer/base/Dockerfile.trixie](.devcontainer/base/Dockerfile.trixie) as its
+[.devcontainer/base/Dockerfile.mcr-trixie](.devcontainer/base/Dockerfile.mcr-trixie) as its
 `build.dockerfile` and declares the same
 [Features](https://containers.dev/features) as the root devcontainer.json
 (`common-utils`, `sshd`, `node`, `python`, `github-cli`, `copilot-cli`), so the
@@ -184,11 +184,19 @@ ghcr.io/bugrasan/devcontainer-base-ai/base:latest
 
 ### Rebuild schedule
 
-The workflow runs on a schedule only (no manual trigger):
+The workflow runs on a schedule and on pushes to `main` that touch the base definition:
 
 ```yaml
-schedule:
-  - cron: "54 6 * * 6"   # every Saturday, 06:54 UTC
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".devcontainer/base/**"
+      - ".github/workflows/publish-base-image.yml"
+  schedule:
+    - cron: "54 6 * * 6"   # every Saturday, 06:54 UTC
+  workflow_dispatch: {}
 ```
 
 GitHub Actions cron schedules are UTC-only and do not adjust for daylight
@@ -221,6 +229,11 @@ Microsoft base image instead.
 An alternative image definition is available at `.devcontainer/base/Dockerfile.trixie`.
 It installs the same Debian packages used by the `:base` image above, creates a
 non-root `vscode` user, and applies dotfiles via `chezmoi`.
+
+> **Note:** This plain Dockerfile bakes in the same `uv`, `pi.dev`, and
+> `claude` installs as `.devcontainer/base/Dockerfile.mcr-trixie`, but does
+> not use Dev Container Features — it's a fully self-contained Dockerfile
+> build.
 
 ### Build
 

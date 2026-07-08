@@ -39,12 +39,26 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}
 
+# Create a user directories to fix bind-mount permissions
+RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
+    && mkdir -p /home/${USERNAME}/.local \
+    && mkdir -p /home/${USERNAME}/.cache \
+    && mkdir -p /home/${USERNAME}/.ssh \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.vscode-server/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cache/ \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/ \
+    && chmod 700 /home/${USERNAME}/.ssh
+
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-# Create directories
-RUN mkdir ~/.ssh && chmod 700 ~/.ssh
+# Bake in development tools for faster container startup
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -fsSL https://pi.dev/install.sh | sh
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
-RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
+# RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles
 
 CMD ["bash"]

@@ -245,7 +245,7 @@
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		// "claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -253,12 +253,12 @@
 
 		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
 
-		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
+		// "uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
-		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		// "chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 		// http based - codeberg can be replaced w/ gitlab.com or github.com
-		// "chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
+		"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
@@ -270,7 +270,7 @@
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 
 		// install pi.dev 
-		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
+		// "pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -328,10 +328,6 @@
 				//"ms-toolsai.jupyter",
 				// ms-toolsai.jupyter-keymap will be auto installed as dependency
 				// but will run on local host only, not in container
-
-				// my basic extensions
-				"EditorConfig.EditorConfig",
-				"albert.TabOut",
 
 				// AI extensions
 				"anthropic.claude-code",
