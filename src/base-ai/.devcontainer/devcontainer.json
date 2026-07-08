@@ -30,7 +30,7 @@
 
 	// either image or self-build docker image
 	// "build": {
-	// 	"dockerfile": "base/Dockerfile.trixie"
+	// 	"dockerfile": "Dockerfile.trixie"
 	// },
 
 
@@ -68,7 +68,7 @@
 		// 	// debian:trixie comes with 3.13, however due to this bug
 		// 	// we still need to provide the version if we want to install jupyterlab
 		// 	// https://github.com/devcontainers/features/issues/1403
-		// 	"version": "os-provided",
+		//	"version": "os-provided",
 		// 	"version": "3.13",
 		// 	"installJupyterlab": "true"
 		// },
@@ -105,9 +105,9 @@
 	// 	}
 	// },
 	// this is for sshd - see also variables in 'containerEnv'
-	"forwardPorts": [2222],
+	"forwardPorts": [${templateOption:sshdPort}],
 	"portsAttributes": {
-		"2222": {
+		"${templateOption:sshdPort}": {
 			"label": "SSH",
 			"onAutoForward": "notify"
 		}
@@ -188,7 +188,7 @@
 
 		// for sshd feature - see also variable 'forwardPorts'
 		// the SSHD_PORT must match with the one in 'forwardPorts'
-		"SSHD_PORT": "2222",
+		"SSHD_PORT": "${templateOption:sshdPort}",
 		// start sshd be default
 		"START_SSHD": "true",
 		// set random password

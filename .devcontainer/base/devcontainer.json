@@ -1,0 +1,41 @@
+// This devcontainer is not meant to be opened directly in VS Code.
+// It exists solely so that `.github/workflows/publish-base-image.yml` can build
+// and publish a pre-baked image (Dockerfile.trixie + these Features) to:
+//   ghcr.io/bugrasan/devcontainer-base-ai/base:latest
+// which the root ../devcontainer.json then consumes via its "image" property.
+{
+	"name": "devcontainer-base-ai base image",
+
+	// Same Dockerfile used by the root ../devcontainer.json's commented-out "build" alternative.
+	"build": {
+		"dockerfile": "Dockerfile.trixie"
+	},
+
+	// Same Features as the root devcontainer.json, baked into the image at build time.
+	"features": {
+		// https://github.com/devcontainers/features/blob/main/src/common-utils/
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"username": "vscode"
+		},
+
+		// https://github.com/devcontainers/features/tree/main/src/sshd
+		// can' install it here since it requires additional info in 'containterEnv' variable
+		// "ghcr.io/devcontainers/features/sshd:1": {},
+
+		// https://github.com/devcontainers/features/blob/main/src/node/
+		"ghcr.io/devcontainers/features/node:2": {
+			"version": "24"
+		},
+
+		// https://github.com/devcontainers/features/blob/main/src/python/
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "os-provided"
+		},
+
+		// https://github.com/devcontainers/features/blob/main/src/github-cli/
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+
+		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
+		"ghcr.io/devcontainers/features/copilot-cli:1": {}
+	}
+}
