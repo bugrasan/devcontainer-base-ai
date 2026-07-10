@@ -25,8 +25,10 @@ jobs:
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
+            tagSuffix: latest-linux-amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+            tagSuffix: latest-linux-arm64
     runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
@@ -47,6 +49,11 @@ jobs:
       # Builds .devcontainer/base/devcontainer.json (Dockerfile.trixie + Features
       # baked in via the devcontainer CLI) and pushes the platform-specific
       # image to GHCR (tag suffix auto-derived, e.g. latest-linux-amd64).
+      #
+      # cacheFrom/cacheTo point at that same previous platform tag so unchanged
+      # Feature layers (most of them, most weeks) are reused instead of being
+      # rebuilt and re-downloaded from scratch on every run - previously there
+      # was no cross-run cache at all.
       - name: Build and push base image
         uses: devcontainers/ci@v0.3
         with:
@@ -55,6 +62,8 @@ jobs:
           platform: ${{ matrix.platform }}
           useNativeRunner: true
           push: always
+          cacheFrom: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
+          cacheTo: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
 
   # Combines the per-platform images built above into a single multi-arch manifest.
   manifest:
