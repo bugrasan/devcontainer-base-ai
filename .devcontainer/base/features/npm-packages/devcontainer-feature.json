@@ -1,0 +1,17 @@
+{
+    // https://containers.dev/implementors/features/
+    "name": "npm-packages",
+    "id": "npm-packages",
+    "version": "1.0.0",
+    "description": "Installs a fixed set of global npm packages used by this devcontainer.",
+    "options": {
+        "packages": {
+            "type": "string",
+            "default": "editorconfig eslint typescript @mermaid-js/mermaid-cli",
+            "description": "Space-separated list of npm packages to install globally."
+        },
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/node",
+    ],
+}

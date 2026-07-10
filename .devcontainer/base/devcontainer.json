@@ -21,8 +21,9 @@
 		},
 
 		// https://github.com/devcontainers/features/tree/main/src/sshd
-		// can' install it here since it requires additional info in 'containterEnv' variable
-		// "ghcr.io/devcontainers/features/sshd:1": {},
+		// SSHD_PORT/START_SSHD default to 2222/false in the Feature itself, which is
+		// what we want - see root ../devcontainer.json's 'forwardPorts' comment.
+		"ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/blob/main/src/node/
 		"ghcr.io/devcontainers/features/node:2": {
@@ -38,6 +39,18 @@
 		"ghcr.io/devcontainers/features/github-cli:1": {},
 
 		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
-		"ghcr.io/devcontainers/features/copilot-cli:1": {}
+		"ghcr.io/devcontainers/features/copilot-cli:1": {},
+
+		// Local Feature (./features/npm-packages) - installsAfter node, since it
+		// needs npm. Same packages previously installed via postCreateCommand.
+		"./features/npm-packages": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features -
+		// self-contained native binary installer, no npm/node dependency.
+		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features -
+		// installsAfter node, since it hard-requires Node.js >=22.19.0 + npm.
+		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {}
 	}
 }

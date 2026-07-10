@@ -119,6 +119,22 @@ jobs:
             command -v uv || exit 1
             echo "✓ uv found"
             uv --version
+            command -v eslint || exit 1
+            echo "✓ eslint found"
+            command -v tsc || exit 1
+            echo "✓ tsc found"
+            command -v mmdc || exit 1
+            echo "✓ mmdc (mermaid-cli) found"
+            command -v claude || exit 1
+            echo "✓ claude found"
+            claude --version
+            command -v pi || exit 1
+            echo "✓ pi found"
+            pi --version
+            command -v sshd || exit 1
+            echo "✓ sshd found"
+            grep -qE "^Port 2222" /etc/ssh/sshd_config || exit 1
+            echo "✓ sshd configured on port 2222"
             echo "✓ All tools verified"
           '
 

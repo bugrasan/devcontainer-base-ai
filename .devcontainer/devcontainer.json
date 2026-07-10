@@ -22,13 +22,11 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
-	// base: Dockerfile.trixie + Features (common-utils, node, python, github-cli,
-	// copilot-cli), published every Saturday 06:54 UTC by
-	// .github/workflows/publish-base-image.yml - see .devcontainer/base/devcontainer.json
-	// full: base image + npm-dependent CLI installs (eslint, tsc, mermaid-cli, claude,
-	// pi.dev) + the sshd Feature, published every Saturday 07:30 UTC by
-	// .github/workflows/publish-full-image.yml - see .devcontainer/full/devcontainer.json
-	"image": "ghcr.io/bugrasan/devcontainer-base-ai/full:latest",
+	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
+	// claude-code, pi-dev), pre-baked and published every Saturday 06:54 UTC by
+	// .github/workflows/publish-base-image.yml
+	// (see .devcontainer/base/devcontainer.json for the build definition).
+	"image": "ghcr.io/bugrasan/devcontainer-base-ai/base:latest",
 
 	// either image or self-build docker image
 	// "build": {
@@ -45,7 +43,7 @@
 		// 	"username": "vscode"
 		// },
 
-		// sshd is baked into the 'full' image (see .devcontainer/full/devcontainer.json)
+		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json)
 		// https://github.com/devcontainers/features/tree/main/src/sshd
 		// "ghcr.io/devcontainers/features/sshd:1": {},
 
@@ -107,8 +105,8 @@
 	// 		"label": "VNC desktop",
 	// 	}
 	// },
-	// this is for sshd (baked into the 'full' image on port 2222 - see
-	// .devcontainer/full/devcontainer.json); VS Code still needs this declared here
+	// this is for sshd (baked into the 'base' image on port 2222 - see
+	// .devcontainer/base/devcontainer.json); VS Code still needs this declared here
 	// since port forwarding is evaluated wherever the container is opened, not baked
 	// into the image
 	"forwardPorts": [2222],
@@ -199,9 +197,9 @@
 
 		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already
 		// defaults SSHD_PORT to 2222 and auto-starts sshd on every container start via
-		// its own baked entrypoint (see .devcontainer/full/devcontainer.json), and
+		// its own baked entrypoint (see .devcontainer/base/devcontainer.json), and
 		// setting them here would have no effect anyway - the Feature's install.sh only
-		// reads them once, when the 'full' image is built, not when a container is
+		// reads them once, when the 'base' image is built, not when a container is
 		// later started from it. 'forwardPorts'/'portsAttributes' above must still match
 		// whatever port is baked in (2222 by default).
 		// set random password
@@ -252,10 +250,10 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		// npm-packages, claude-code-binary and pi.dev are baked into the 'full' image's
-		// Dockerfile now (see .devcontainer/full/Dockerfile) - npm is available there
-		// via the base image's 'node' Feature, so they no longer need to wait for
-		// postCreateCommand.
+		// npm-packages, claude-code and pi-dev are baked into the 'base' image now, as
+		// Features (see .devcontainer/base/devcontainer.json and
+		// .devcontainer/base/features/npm-packages) - installsAfter the 'node' Feature
+		// where they need npm, so they no longer need to wait for postCreateCommand.
 
 		// openai codex cli
 		// https://github.com/openai/codex
