@@ -1,0 +1,30 @@
+// This devcontainer is not meant to be opened directly in VS Code.
+// It exists solely so that `.github/workflows/publish-full-image.yml` can build
+// and publish a pre-baked image (Dockerfile + the sshd Feature below) to:
+//   ghcr.io/bugrasan/devcontainer-base-ai/full:latest
+// which the root ../../devcontainer.json then consumes via its "image" property.
+{
+	"name": "devcontainer-base-ai full image",
+
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+
+	// https://github.com/devcontainers/features/tree/main/src/sshd
+	"features": {
+		"ghcr.io/devcontainers/features/sshd:1": {}
+	},
+
+	// NOTE: these must be declared here, not in the root devcontainer.json.
+	// The sshd Feature's install.sh bakes SSHD_PORT into /etc/ssh/sshd_config at
+	// Feature-install time (i.e. now, when this image is built) - it is not read
+	// again when a container is later started from the published image, so setting
+	// it in the root devcontainer.json's containerEnv would have no effect on the
+	// listening port. The root devcontainer.json still needs its own
+	// 'forwardPorts'/'portsAttributes' for 2222, since that's a VS Code UI concern
+	// evaluated wherever the container is opened, not something baked into the image.
+	"containerEnv": {
+		"SSHD_PORT": "2222",
+		"START_SSHD": "true"
+	}
+}
