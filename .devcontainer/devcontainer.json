@@ -192,11 +192,13 @@
 		"EDITOR": "vim",
 		"VISUAL": "code",
 
-		// SSHD_PORT/START_SSHD are baked into the 'full' image at build time (the sshd
-		// Feature's install.sh writes SSHD_PORT into /etc/ssh/sshd_config once, when the
-		// image is built - see .devcontainer/full/devcontainer.json); setting them here
-		// would have no effect on the already-built image, so they're intentionally
-		// omitted. 'forwardPorts'/'portsAttributes' above must still match port 2222.
+		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already
+		// defaults SSHD_PORT to 2222 and auto-starts sshd on every container start via
+		// its own baked entrypoint (see .devcontainer/full/devcontainer.json), and
+		// setting them here would have no effect anyway - the Feature's install.sh only
+		// reads them once, when the 'full' image is built, not when a container is
+		// later started from it. 'forwardPorts'/'portsAttributes' above must still match
+		// whatever port is baked in (2222 by default).
 		// set random password
 		// "NEW_PASSWORD": "random",
 

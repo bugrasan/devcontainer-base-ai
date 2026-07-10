@@ -11,20 +11,16 @@
 	},
 
 	// https://github.com/devcontainers/features/tree/main/src/sshd
+	// Not setting SSHD_PORT/START_SSHD here: the Feature's install.sh already
+	// defaults SSHD_PORT to 2222, and it bakes its own 'entrypoint'
+	// (ssh-init.sh, which runs '/etc/init.d/ssh start' unconditionally on every
+	// container start) into the image metadata, so START_SSHD's build-time-only
+	// eager start has no lasting effect either way. If a non-default port is ever
+	// needed, set SSHD_PORT here (it must be set at build time - the Feature's
+	// install.sh bakes it into /etc/ssh/sshd_config once, when this image is
+	// built, and never reads it again) and update root's 'forwardPorts'/
+	// 'portsAttributes' to match.
 	"features": {
 		"ghcr.io/devcontainers/features/sshd:1": {}
-	},
-
-	// NOTE: these must be declared here, not in the root devcontainer.json.
-	// The sshd Feature's install.sh bakes SSHD_PORT into /etc/ssh/sshd_config at
-	// Feature-install time (i.e. now, when this image is built) - it is not read
-	// again when a container is later started from the published image, so setting
-	// it in the root devcontainer.json's containerEnv would have no effect on the
-	// listening port. The root devcontainer.json still needs its own
-	// 'forwardPorts'/'portsAttributes' for 2222, since that's a VS Code UI concern
-	// evaluated wherever the container is opened, not something baked into the image.
-	"containerEnv": {
-		"SSHD_PORT": "2222",
-		"START_SSHD": "true"
 	}
 }
