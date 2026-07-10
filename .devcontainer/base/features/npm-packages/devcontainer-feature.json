@@ -11,7 +11,18 @@
             "description": "Space-separated list of npm packages to install globally."
         },
     },
+    // node is a hard dependency (this Feature needs npm). The rest are ordering-
+    // only hints: this Feature's own content (npm packages at "latest") changes
+    // far more often than the stable Features below it, and Docker's cache key
+    // chains sequentially - putting a frequently-changing Feature early would
+    // cascade-invalidate every Feature after it on most builds. Installing last
+    // keeps the stable prefix cache-hit even when this one's content changes.
     "installsAfter": [
         "ghcr.io/devcontainers/features/node",
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/devcontainers/features/copilot-cli",
+        "ghcr.io/devcontainers/features/github-cli",
+        "ghcr.io/devcontainers/features/python",
+        "ghcr.io/devcontainers/features/sshd",
     ],
 }

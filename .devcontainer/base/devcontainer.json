@@ -26,8 +26,15 @@
 		"ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/blob/main/src/node/
+		// nodeGypDependencies/pnpmVersion explicitly disabled: their defaults (true /
+		// "latest") pull in a full C/C++ build toolchain and pnpm, neither of which
+		// anything here uses (only npm, for the npm-packages Feature) - this was the
+		// single largest layer in the image (~509MB of ~1.44GB total), dominating
+		// build/push time.
 		"ghcr.io/devcontainers/features/node:2": {
-			"version": "24"
+			"version": "24",
+			"nodeGypDependencies": false,
+			"pnpmVersion": "none"
 		},
 
 		// https://github.com/devcontainers/features/blob/main/src/python/
