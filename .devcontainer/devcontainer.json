@@ -22,10 +22,10 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
-	// Dockerfile.trixie + the Features below, pre-baked and published every
-	// Saturday 06:54 UTC by .github/workflows/publish-base-image.yml
+	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
+	// claude-code, pi-dev), pre-baked and published every Saturday 06:54 UTC by
+	// .github/workflows/publish-base-image.yml
 	// (see .devcontainer/base/devcontainer.json for the build definition).
-	// w/ baked-in features 'common-utils', 'node', 'python', 'github-cli', 'copilot-cli'
 	"image": "ghcr.io/bugrasan/devcontainer-base-ai/base:latest",
 
 	// either image or self-build docker image
@@ -43,8 +43,9 @@
 		// 	"username": "vscode"
 		// },
 
+		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json)
 		// https://github.com/devcontainers/features/tree/main/src/sshd
-		"ghcr.io/devcontainers/features/sshd:1": {},
+		// "ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/tree/main/src/desktop-lite
 		// see also variables 'forwardPorts', 'runArgs'
@@ -104,7 +105,10 @@
 	// 		"label": "VNC desktop",
 	// 	}
 	// },
-	// this is for sshd - see also variables in 'containerEnv'
+	// this is for sshd (baked into the 'base' image on port 2222 - see
+	// .devcontainer/base/devcontainer.json); VS Code still needs this declared here
+	// since port forwarding is evaluated wherever the container is opened, not baked
+	// into the image
 	"forwardPorts": [2222],
 	"portsAttributes": {
 		"2222": {
@@ -112,6 +116,11 @@
 			"onAutoForward": "notify"
 		}
 	},
+	// Alternative to 'forwardPorts' above: a real Docker port publish (host:container),
+	// so `ssh -p 2222 vscode@localhost` works even without an active VS Code Dev
+	// Containers session (forwardPorts is a dynamic tunnel that only exists while a
+	// session is open). Uncomment to switch to this instead.
+	// "appPort": ["2222:2222"],
 
 	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
 	// initializeCommand runs on the HOST before the container starts.
@@ -186,11 +195,13 @@
 		"EDITOR": "vim",
 		"VISUAL": "code",
 
-		// for sshd feature - see also variable 'forwardPorts'
-		// the SSHD_PORT must match with the one in 'forwardPorts'
-		"SSHD_PORT": "2222",
-		// start sshd be default
-		"START_SSHD": "true",
+		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already
+		// defaults SSHD_PORT to 2222 and auto-starts sshd on every container start via
+		// its own baked entrypoint (see .devcontainer/base/devcontainer.json), and
+		// setting them here would have no effect anyway - the Feature's install.sh only
+		// reads them once, when the 'base' image is built, not when a container is
+		// later started from it. 'forwardPorts'/'portsAttributes' above must still match
+		// whatever port is baked in (2222 by default).
 		// set random password
 		// "NEW_PASSWORD": "random",
 
@@ -239,14 +250,10 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		"npm-packages": "npm install -g editorconfig eslint typescript @mermaid-js/mermaid-cli && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
-
-		// anthropic claude code cli
-		// https://code.claude.com/docs/en/overview
-		// bash is the recommended way as of Nov'25
-		// NOTE: needs npm (from the 'node' Feature), so it must run here, not baked into the base Dockerfile
-		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		// npm-packages, claude-code and pi-dev are baked into the 'base' image now, as
+		// Features (see .devcontainer/base/devcontainer.json and
+		// .devcontainer/base/features/npm-packages) - installsAfter the 'node' Feature
+		// where they need npm, so they no longer need to wait for postCreateCommand.
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -270,10 +277,6 @@
 
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
-
-		// install pi.dev
-		// NOTE: needs npm (from the 'node' Feature), so it must run here, not baked into the base Dockerfile
-		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 

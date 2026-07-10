@@ -50,7 +50,8 @@ published as an OCI artifact by
 a build-only definition (not meant to be opened in VS Code) that builds
 [Dockerfile.mcr-trixie](.devcontainer/base/Dockerfile.mcr-trixie) plus the same
 Features as the root devcontainer.json (`common-utils`, `sshd`, `node`,
-`python`, `github-cli`, `copilot-cli`), baking them all into:
+`python`, `github-cli`, `copilot-cli`, plus the local `npm-packages` Feature
+and the published `claude-code`/`pi-dev` Features), baking them all into:
 
 ```
 ghcr.io/bugrasan/devcontainer-base-ai/base:latest
@@ -68,17 +69,27 @@ building the Dockerfile locally, so its equivalent `postCreateCommand` steps
 (apt packages, etc.) stay commented out — they're only a fallback for a plain
 Microsoft base image.
 
-### Why `pi`/`claude` install via `postCreateCommand`, not the Dockerfile
+### Why `pi`/`claude`/npm packages are Features, not Dockerfile `RUN` lines
 
 `devcontainer build` only builds the Dockerfile, then layers Features
-(including `node`) **on top of it** — it never runs `postCreateCommand`. So:
+(including `node`) **on top of it** — there's no way for a plain Dockerfile
+`RUN` to run *after* a Feature. So:
 
 - **`uv`** doesn't need Node — it's `RUN` directly in the Dockerfile.
-- **`pi.dev`/`claude.ai` installers need `npm`**, which only exists once the
-  `node` Feature layer is applied *after* the Dockerfile builds. Baking them
-  into the Dockerfile fails non-interactively ("No terminal detected"). They're
-  installed instead via `postCreateCommand` in devcontainer.json (root and
-  template), which always runs after Features are in place.
+- **`eslint`/`typescript`/`@mermaid-js/mermaid-cli`** (the local
+  [`npm-packages`](.devcontainer/base/features/npm-packages) Feature) and
+  **`pi-dev`** need `npm`, which only exists once the `node` Feature layer
+  applies — both declare `installsAfter: node` so the Feature installer runs
+  in the right order.
+- **`claude-code`** turns out not to need `npm` at all — confirmed by actually
+  running `claude.ai/install.sh` non-interactively (no tty, no stdin): it's a
+  self-contained native binary installer. The install fails some other way
+  ("No terminal detected") for `pi.dev` specifically if Node/npm aren't
+  present yet, which is exactly what `installsAfter: node` prevents.
+
+Published from a separate repo:
+[bugrasan/devcontainers-features](https://github.com/bugrasan/devcontainers-features)
+(`claude-code`, `pi-dev`).
 
 ## Alternative: Plain Docker (Debian Trixie)
 
@@ -111,10 +122,12 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 ```
 .
 ├── .devcontainer/
-│   ├── devcontainer.json      # dev container for THIS repo (uses the :base image)
+│   ├── devcontainer.json          # dev container for THIS repo (uses the :base image)
 │   └── base/
-│       ├── devcontainer.json  # build-only definition published by publish-base-image.yml
-│       └── Dockerfile.trixie  # source Dockerfile baked into the :base image
+│       ├── devcontainer.json      # build-only definition published by publish-base-image.yml
+│       ├── Dockerfile.mcr-trixie  # source Dockerfile actually baked into the :base image
+│       ├── Dockerfile.trixie      # unused by :base - see "Alternative: Plain Docker" below
+│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, mermaid-cli
 ├── src/base-ai/                # published by publish-templates.yml
 ├── .github/workflows/
 │   ├── publish-templates.yml
