@@ -7,6 +7,11 @@ name: "DIAG - install script TTY probe (temporary, safe to delete)"
 # devcontainer Feature's install.sh - so this reproduces that failure mode
 # for real, on real infra, and prints the script content for analysis.
 on:
+  push:
+    branches:
+      - claude/devcontainer-npm-sshd-setup-n1ec4s
+    paths:
+      - ".github/workflows/diag-install-scripts.yml"
   workflow_dispatch: {}
 
 jobs:
