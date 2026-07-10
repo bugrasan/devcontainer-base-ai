@@ -54,6 +54,14 @@ jobs:
       # Feature layers (most of them, most weeks) are reused instead of being
       # rebuilt and re-downloaded from scratch on every run - previously there
       # was no cross-run cache at all.
+      #
+      # noCache is forced on the scheduled run only: a Docker layer's cache key
+      # depends on its instruction text + parent layer, not on whether re-running
+      # it would fetch different content - so 'apt-get upgrade' would otherwise
+      # keep replaying last week's cached (stale) package versions on every
+      # push/dispatch build, silently defeating the one job this weekly cron
+      # exists for (see the file header comment). Every other trigger still
+      # benefits from the cache.
       - name: Build and push base image
         uses: devcontainers/ci@v0.3
         with:
@@ -64,6 +72,7 @@ jobs:
           push: always
           cacheFrom: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
           cacheTo: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
+          noCache: ${{ github.event_name == 'schedule' }}
 
   # Combines the per-platform images built above into a single multi-arch manifest.
   manifest:
