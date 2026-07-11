@@ -7,7 +7,7 @@
     "options": {
         "packages": {
             "type": "string",
-            "default": "editorconfig eslint typescript @mermaid-js/mermaid-cli",
+            "default": "editorconfig eslint typescript",
             "description": "Space-separated list of npm packages to install globally."
         },
     },

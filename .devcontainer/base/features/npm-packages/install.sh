@@ -4,7 +4,7 @@
 set -e
 
 # variables provided by devcontainer-feature
-NPM_PACKAGES="${PACKAGES:-"editorconfig eslint typescript @mermaid-js/mermaid-cli"}"
+NPM_PACKAGES="${PACKAGES:-"editorconfig eslint typescript"}"
 
 # The 'install.sh' entrypoint script is always executed as the root user.
 # For more details, see https://containers.dev/implementors/features#user-env-var
@@ -28,6 +28,9 @@ NODE_BIN_DIR="${NVM_DIR}/current/bin"
 # match how the node Feature sets up a user-writable global prefix - the same
 # pattern this repo previously used via a postCreateCommand step of the same
 # name, before it moved here.
-su "${TARGET_USER}" -c "export PATH='${NODE_BIN_DIR}:${PATH}'; npm install -g ${NPM_PACKAGES}"
+#
+# `npm cache clean --force` runs in the same command (same image layer) so the
+# ~tens-of-MB npm download cache never gets committed into the layer.
+su "${TARGET_USER}" -c "export PATH='${NODE_BIN_DIR}:${PATH}'; npm install -g ${NPM_PACKAGES} && npm cache clean --force"
 
 echo 'Done!'

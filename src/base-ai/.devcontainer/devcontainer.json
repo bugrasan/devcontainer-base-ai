@@ -239,7 +239,7 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		"npm-packages": "npm install -g editorconfig eslint typescript @mermaid-js/mermaid-cli && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
+		"npm-packages": "npm install -g editorconfig eslint typescript && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
 
 		// anthropic claude code cli
 		// https://code.claude.com/docs/en/overview

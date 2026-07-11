@@ -158,8 +158,6 @@ jobs:
             echo "✓ eslint found"
             command -v tsc || exit 1
             echo "✓ tsc found"
-            command -v mmdc || exit 1
-            echo "✓ mmdc (mermaid-cli) found"
             command -v claude || exit 1
             echo "✓ claude found"
             claude --version
