@@ -23,7 +23,7 @@
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
 	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
-	// claude-code, pi-dev), pre-baked and published every Saturday 06:54 UTC by
+	// claude-code, pi-dev, speckit), pre-baked and published every Saturday 06:54 UTC by
 	// .github/workflows/publish-base-image.yml
 	// (see .devcontainer/base/devcontainer.json for the build definition).
 	"image": "ghcr.io/bugrasan/devcontainer-base-ai/base:latest",
@@ -250,10 +250,11 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		// npm-packages, claude-code and pi-dev are baked into the 'base' image now, as
-		// Features (see .devcontainer/base/devcontainer.json and
+		// npm-packages, claude-code, pi-dev and speckit are baked into the 'base' image
+		// now, as Features (see .devcontainer/base/devcontainer.json and
 		// .devcontainer/base/features/npm-packages) - installsAfter the 'node' Feature
 		// where they need npm, so they no longer need to wait for postCreateCommand.
+		// (speckit needs uv + Python, both already in the base image, not npm.)
 
 		// openai codex cli
 		// https://github.com/openai/codex

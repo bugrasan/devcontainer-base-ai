@@ -58,6 +58,13 @@
 
 		// Published from https://github.com/bugrasan/devcontainers-features -
 		// installsAfter node, since it hard-requires Node.js >=22.19.0 + npm.
-		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {}
+		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features - installs
+		// the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+
+		// (the python Feature above) and uv (baked into Dockerfile.mcr-trixie), both
+		// already present, so it neither installs nor depends on them (installsAfter
+		// python only, for cache ordering).
+		"ghcr.io/bugrasan/devcontainers-features/speckit:1": {}
 	}
 }
