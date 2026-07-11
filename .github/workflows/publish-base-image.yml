@@ -15,19 +15,25 @@ on:
     - cron: "54 6 * * 6"
   workflow_dispatch: {}
 
+env:
+  IMAGE: ghcr.io/bugrasan/devcontainer-base-ai/base
+
 jobs:
   # Native per-arch builds using GitHub's hosted amd64/arm64 runners - no QEMU
   # emulation needed (public repos get free ubuntu-24.04-arm runners), so this
   # is faster and avoids emulation compatibility issues.
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
+            arch: amd64
             tagSuffix: latest-linux-amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+            arch: arm64
             tagSuffix: latest-linux-arm64
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -46,35 +52,46 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Builds .devcontainer/base/devcontainer.json (Dockerfile.trixie + Features
-      # baked in via the devcontainer CLI) and pushes the platform-specific
-      # image to GHCR (tag suffix auto-derived, e.g. latest-linux-amd64).
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      # Builds .devcontainer/base/devcontainer.json (Dockerfile + Features baked in
+      # by the devcontainer CLI) and pushes the platform-specific image to GHCR
+      # (e.g. :latest-linux-amd64).
       #
-      # cacheFrom/cacheTo point at that same previous platform tag so unchanged
-      # Feature layers (most of them, most weeks) are reused instead of being
-      # rebuilt and re-downloaded from scratch on every run - previously there
-      # was no cross-run cache at all.
+      # `--push true` makes the CLI run `docker buildx build --push`, i.e. buildkit's
+      # REGISTRY exporter: compressed layers stream straight from buildkit to GHCR.
+      # This deliberately avoids the devcontainers/ci push path, which exported the
+      # whole image to a docker tarball, imported it into the docker daemon, then
+      # `docker push`ed it - ~2.5 min/arch of pure round-trip that a direct push
+      # eliminates (a cold build+push dropped from ~7.5 min to ~3 min/arch).
+      #
+      # Cache uses a dedicated :buildcache-<arch> tag with mode=max (every
+      # intermediate layer, not just the final ones). A separate cache ref is
+      # required so type=registry,mode=max doesn't overwrite the published image.
       #
       # noCache is forced on the scheduled run only: a Docker layer's cache key
       # depends on its instruction text + parent layer, not on whether re-running
-      # it would fetch different content - so 'apt-get upgrade' would otherwise
-      # keep replaying last week's cached (stale) package versions on every
-      # push/dispatch build, silently defeating the one job this weekly cron
-      # exists for (see the file header comment). Every other trigger still
-      # benefits from the cache.
-      - name: Build and push base image
-        uses: devcontainers/ci@v0.3
-        with:
-          configFile: .devcontainer/base/devcontainer.json
-          imageName: ghcr.io/bugrasan/devcontainer-base-ai/base
-          platform: ${{ matrix.platform }}
-          useNativeRunner: true
-          push: always
-          cacheFrom: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
-          cacheTo: ghcr.io/bugrasan/devcontainer-base-ai/base:${{ matrix.tagSuffix }}
-          noCache: ${{ github.event_name == 'schedule' }}
+      # it would fetch different content - so 'apt-get upgrade' would otherwise keep
+      # replaying last week's cached (stale) package versions on every push/dispatch
+      # build, silently defeating the one job this weekly cron exists for. Every
+      # other trigger still benefits from the cache.
+      - name: Build and push base image (direct registry export)
+        run: |
+          devcontainer build \
+            --workspace-folder . \
+            --config .devcontainer/base/devcontainer.json \
+            --image-name "${IMAGE}:${{ matrix.tagSuffix }}" \
+            --platform ${{ matrix.platform }} \
+            --push true \
+            --cache-from "type=registry,ref=${IMAGE}:buildcache-${{ matrix.arch }}" \
+            --cache-to   "type=registry,ref=${IMAGE}:buildcache-${{ matrix.arch }},mode=max" \
+            ${{ github.event_name == 'schedule' && '--no-cache' || '' }}
 
-  # Combines the per-platform images built above into a single multi-arch manifest.
+  # Combines the per-platform images built above into a single multi-arch manifest
+  # published as :latest (what ../devcontainer.json consumes). imagetools works
+  # directly on registry manifests - it does not pull or re-push layer blobs, so it
+  # stays a few seconds regardless of image size.
   manifest:
     needs: build
     runs-on: ubuntu-latest
@@ -93,10 +110,10 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Merge platform images into multi-arch manifest
-        uses: devcontainers/ci/merge@v0.3
-        with:
-          imageName: ghcr.io/bugrasan/devcontainer-base-ai/base
-          platforms: linux/amd64,linux/arm64
+        run: |
+          docker buildx imagetools create -t "${IMAGE}:latest" \
+            "${IMAGE}:latest-linux-amd64" \
+            "${IMAGE}:latest-linux-arm64"
 
   # Verify the published multi-arch image contains the expected tools.
   smoke-test:
@@ -155,4 +172,3 @@ jobs:
             echo "✓ sshd configured on port 2222"
             echo "✓ All tools verified"
           '
-
