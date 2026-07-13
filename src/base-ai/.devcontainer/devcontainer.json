@@ -43,8 +43,10 @@
 		// 	"username": "vscode"
 		// },
 
+		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json).
+		// Uncomment only if you swap the 'image' above for one without it baked in.
 		// https://github.com/devcontainers/features/tree/main/src/sshd
-		"ghcr.io/devcontainers/features/sshd:1": {},
+		// "ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/tree/main/src/desktop-lite
 		// see also variables 'forwardPorts', 'runArgs'
@@ -186,11 +188,13 @@
 		"EDITOR": "vim",
 		"VISUAL": "code",
 
-		// for sshd feature - see also variable 'forwardPorts'
-		// the SSHD_PORT must match with the one in 'forwardPorts'
-		"SSHD_PORT": "${templateOption:sshdPort}",
-		// start sshd be default
-		"START_SSHD": "true",
+		// SSHD_PORT/START_SSHD are intentionally omitted: sshd is baked into the 'base'
+		// image and the Feature reads these only at image-build time, so setting them at
+		// container-start has no effect. Uncomment them (and the sshd Feature above) only
+		// if you swap to a base image without sshd baked in; then keep SSHD_PORT in sync
+		// with the 'sshdPort' template option that 'forwardPorts'/'portsAttributes' use.
+		// "SSHD_PORT": "${templateOption:sshdPort}",
+		// "START_SSHD": "true",
 		// set random password
 		// "NEW_PASSWORD": "random",
 
@@ -239,13 +243,15 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		"npm-packages": "npm install -g editorconfig eslint typescript && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
+		// npm-packages, claude-code, uv and pi.dev are baked into the 'base' image (see
+		// .devcontainer/base/). Uncomment only if you swap to an image without them.
+		// "npm-packages": "npm install -g editorconfig eslint typescript pyright && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
 
-		// anthropic claude code cli
+		// anthropic claude code cli - baked into the 'base' image
 		// https://code.claude.com/docs/en/overview
 		// bash is the recommended way as of Nov'25
 		// "claude-code-npm": "npm install -g @anthropic-ai/claude-code && echo '04-claude-code-npm' >> ~/devcontainer-post-create.txt",
-		"claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
+		// "claude-code-binary": "curl -fsSL https://claude.ai/install.sh | bash && echo '04-claude-code-binary' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -253,7 +259,8 @@
 
 		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
 
-		"uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
+		// uv is baked into the 'base' image's Dockerfile
+		// "uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
 		//"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --apply git@codeberg.org:bugrasan/dotfiles.git && echo '10-chezmoi' >> ~/devcontainer-post-create.txt",
@@ -269,8 +276,8 @@
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 
-		// install pi.dev 
-		"pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
+		// pi.dev is baked into the 'base' image
+		// "pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 

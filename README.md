@@ -36,13 +36,16 @@ published as an OCI artifact by
 - **Not on the public [containers.dev](https://containers.dev/templates) index** — it won't appear in the VS Code/Codespaces template picker; apply it directly:
 
   ```bash
-  devcontainer templates apply -w /path/to/project -t ghcr.io/bugrasan/devcontainer-base-ai/base-ai:0.1.0
+  # :0 is the floating major tag (currently 0.1.1); pin an exact version with :0.1.1 if you prefer
+  devcontainer templates apply -w /path/to/project -t ghcr.io/bugrasan/devcontainer-base-ai/base-ai:0
   ```
 
-> **One-time setup:** GHCR packages default to private. Make `base-ai` and
-> `base` public once via `github.com/users/bugrasan/packages` → package →
-> **Settings → Danger Zone → Change visibility**. This can't be automated with
-> the default `GITHUB_TOKEN`.
+> **One-time setup:** GHCR packages default to private. Make the published
+> packages public once via `github.com/users/bugrasan/packages` → package →
+> **Settings → Danger Zone → Change visibility**: the `base` image and the
+> `base-ai` template (required for anonymous pull/apply), plus the
+> `devcontainer-base-ai` collection metadata package (optional). This can't be
+> automated with the default `GITHUB_TOKEN`.
 
 ## The `:base` Image
 
@@ -76,7 +79,7 @@ Microsoft base image.
 `RUN` to run *after* a Feature. So:
 
 - **`uv`** doesn't need Node — it's `RUN` directly in the Dockerfile.
-- **`eslint`/`typescript`/`@mermaid-js/mermaid-cli`** (the local
+- **`eslint`/`typescript`/`pyright`** (the local
   [`npm-packages`](.devcontainer/base/features/npm-packages) Feature) and
   **`pi-dev`** need `npm`, which only exists once the `node` Feature layer
   applies — both declare `installsAfter: node` so the Feature installer runs
@@ -116,7 +119,7 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 | Grab latest file | `git checkout devcontainer-upstream/main -- .devcontainer/devcontainer.json` |
 | Cherry-pick a commit | `git cherry-pick <hash>` |
 | Interactive partial apply | `git checkout -p devcontainer-upstream/main -- .devcontainer/devcontainer.json` |
-| Apply the `base-ai` Template | `devcontainer templates apply -w <dir> -t ghcr.io/bugrasan/devcontainer-base-ai/base-ai:0.1.0` |
+| Apply the `base-ai` Template | `devcontainer templates apply -w <dir> -t ghcr.io/bugrasan/devcontainer-base-ai/base-ai:0` |
 | Pull the `:base` image | `docker pull ghcr.io/bugrasan/devcontainer-base-ai/base:latest` |
 
 ## Repository Layout
@@ -129,7 +132,7 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 │       ├── devcontainer.json      # build-only definition published by publish-base-image.yml
 │       ├── Dockerfile.mcr-trixie  # source Dockerfile actually baked into the :base image
 │       ├── Dockerfile.trixie      # unused by :base - see "Alternative: Plain Docker" below
-│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, mermaid-cli
+│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, pyright
 ├── src/base-ai/                # published by publish-templates.yml
 ├── .github/workflows/
 │   ├── publish-templates.yml
