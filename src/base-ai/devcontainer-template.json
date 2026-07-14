@@ -1,6 +1,6 @@
 {
 	"id": "base-ai",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"name": "Base AI Dev Container",
 	"description": "One-size-fits-all Debian trixie dev container for AI/ML development: node, python, github-cli, copilot-cli, sshd, and a curated set of CLI tools (bat, eza, fzf, ripgrep, lazygit, jq, and more).",
 	"documentationURL": "https://github.com/bugrasan/devcontainer-base-ai/tree/main/src/base-ai",

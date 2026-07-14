@@ -54,6 +54,10 @@
 
 		// Published from https://github.com/bugrasan/devcontainers-features -
 		// self-contained native binary installer, no npm/node dependency.
+		// Also installs the LSP plugins (pyright-lsp/typescript-lsp/gopls-lsp) at user
+		// scope and sets ENABLE_LSP_TOOL=1 via its default 'lspPlugins' option. The
+		// language-server binaries come from node/npm-packages (pyright-langserver,
+		// typescript-language-server); gopls stays dormant until a Go toolchain is added.
 		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
 
 		// Published from https://github.com/bugrasan/devcontainers-features -

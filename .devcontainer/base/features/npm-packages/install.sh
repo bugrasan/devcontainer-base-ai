@@ -4,7 +4,7 @@
 set -e
 
 # variables provided by devcontainer-feature
-NPM_PACKAGES="${PACKAGES:-"editorconfig eslint typescript pyright"}"
+NPM_PACKAGES="${PACKAGES:-"editorconfig eslint typescript pyright typescript-language-server"}"
 
 # The 'install.sh' entrypoint script is always executed as the root user.
 # For more details, see https://containers.dev/implementors/features#user-env-var

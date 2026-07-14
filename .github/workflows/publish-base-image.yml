@@ -158,6 +158,12 @@ jobs:
             echo "✓ eslint found"
             command -v tsc || exit 1
             echo "✓ tsc found"
+            command -v pyright-langserver || exit 1
+            echo "✓ pyright-langserver found"
+            command -v typescript-language-server || exit 1
+            echo "✓ typescript-language-server found"
+            [ "$ENABLE_LSP_TOOL" = "1" ] || exit 1
+            echo "✓ ENABLE_LSP_TOOL=1 baked in"
             command -v claude || exit 1
             echo "✓ claude found"
             claude --version

@@ -195,6 +195,14 @@
 		"EDITOR": "vim",
 		"VISUAL": "code",
 
+		// Enable Claude Code's LSP tool (go-to-definition, find-references, hover,
+		// diagnostics via language servers instead of grep/read). Also baked into the
+		// 'base' image (Dockerfile ENV + the claude-code Feature's containerEnv); set
+		// here too so it still applies if you swap the base image for one without it.
+		// Language servers: pyright-langserver + typescript-language-server (npm-packages
+		// Feature), Pylance (python Feature's VS Code extension).
+		"ENABLE_LSP_TOOL": "1",
+
 		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already
 		// defaults SSHD_PORT to 2222 and auto-starts sshd on every container start via
 		// its own baked entrypoint (see .devcontainer/base/devcontainer.json), and
@@ -310,6 +318,11 @@
 				"chat.useNestedAgentsMdFiles": true,
 				// https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_add-an-mcp-server-from-the-github-mcp-server-registry
 				"chat.mcp.gallery.enabled": true,
+
+				// VS Code Copilot agent mode + the built-in 'find_symbol' LSP tool.
+				// Pylance (python extension) and VS Code's built-in TypeScript language
+				// features supply the servers; no third-party LSP extension needed.
+				"chat.agent.enabled": true,
 
 				// terminal tool auto approve settings
 				// https://code.visualstudio.com/docs/copilot/chat/chat-tools#_autoapprove-all-tools

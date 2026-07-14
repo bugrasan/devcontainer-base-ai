@@ -53,12 +53,30 @@ WORKDIR /home/${USERNAME}
 # which aren't sourced in that case.
 ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 
+# Turn on Claude Code's LSP tool for every container built from this image. The
+# pyright-lsp/typescript-lsp/gopls-lsp plugins themselves are installed by the
+# baked-in 'claude-code' Feature; their language-server binaries come from the
+# 'node'/'npm-packages' Features (pyright-langserver, typescript-language-server).
+ENV ENABLE_LSP_TOOL=1
+
 # Bake in development tools for faster container startup.
 # NOTE: pi.dev and claude.ai installers require npm, which is only provided later by the
 # devcontainer 'node' Feature (Features are layered on top of this Dockerfile at build time,
 # so npm isn't available yet here) - install them via 'postCreateCommand' instead.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf "$HOME/.cache"/* 2>/dev/null || true
+
+# LSP code-intelligence config for the other two agent harnesses (Claude Code is
+# handled by the 'claude-code' Feature + ENABLE_LSP_TOOL above):
+#  - GitHub Copilot CLI: user-scope ~/.copilot/lsp-config.json wiring the pyright
+#    and typescript language servers (binaries provided by the npm-packages Feature).
+#  - Claude Code: a short ~/.claude/CLAUDE.md bias toward LSP over grep/read.
+# Written as single-line files via printf so this works on both BuildKit and the
+# classic builder (no RUN-heredoc dependency). gopls is intentionally omitted
+# from the Copilot config until a Go toolchain is added to the image.
+RUN mkdir -p "$HOME/.copilot" "$HOME/.claude" \
+    && printf '%s\n' '{"lspServers":{"pyright":{"command":"pyright-langserver","args":["--stdio"],"fileExtensions":{".py":"python",".pyi":"python"}},"typescript":{"command":"typescript-language-server","args":["--stdio"],"fileExtensions":{".ts":"typescript",".tsx":"typescriptreact",".js":"javascript",".jsx":"javascriptreact",".mjs":"javascript",".cjs":"javascript"}}}}' > "$HOME/.copilot/lsp-config.json" \
+    && printf '%s\n' 'Before code navigation, check whether an LSP server is running. If so, prefer LSP operations (go-to-definition, find-references, hover) over Grep/Read when resolving symbols and types.' > "$HOME/.claude/CLAUDE.md"
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 # RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles

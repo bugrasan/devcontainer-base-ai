@@ -60,12 +60,25 @@ WORKDIR /home/${USERNAME}
 # which aren't sourced in that case.
 ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 
+# Turn on Claude Code's LSP tool for every container built from this image.
+# (This plain-Docker variant ships no Features, so install the plugins/binaries
+# yourself - see the LSP notes in README.md.)
+ENV ENABLE_LSP_TOOL=1
+
 # Bake in development tools for faster container startup.
 # NOTE: pi.dev and claude.ai installers require npm, which is only provided later by the
 # devcontainer 'node' Feature (Features are layered on top of this Dockerfile at build time,
 # so npm isn't available yet here) - install them via 'postCreateCommand' instead.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf "$HOME/.cache"/* 2>/dev/null || true
+
+# LSP code-intelligence config baked for the container's user:
+#  - GitHub Copilot CLI: user-scope ~/.copilot/lsp-config.json (pyright + typescript).
+#  - Claude Code: a short ~/.claude/CLAUDE.md bias toward LSP over grep/read.
+# Single-line printf so this works on both BuildKit and the classic builder.
+RUN mkdir -p "$HOME/.copilot" "$HOME/.claude" \
+    && printf '%s\n' '{"lspServers":{"pyright":{"command":"pyright-langserver","args":["--stdio"],"fileExtensions":{".py":"python",".pyi":"python"}},"typescript":{"command":"typescript-language-server","args":["--stdio"],"fileExtensions":{".ts":"typescript",".tsx":"typescriptreact",".js":"javascript",".jsx":"javascriptreact",".mjs":"javascript",".cjs":"javascript"}}}}' > "$HOME/.copilot/lsp-config.json" \
+    && printf '%s\n' 'Before code navigation, check whether an LSP server is running. If so, prefer LSP operations (go-to-definition, find-references, hover) over Grep/Read when resolving symbols and types.' > "$HOME/.claude/CLAUDE.md"
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 # RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles

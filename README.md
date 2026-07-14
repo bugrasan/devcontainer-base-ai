@@ -79,7 +79,7 @@ Microsoft base image.
 `RUN` to run *after* a Feature. So:
 
 - **`uv`** doesn't need Node — it's `RUN` directly in the Dockerfile.
-- **`eslint`/`typescript`/`pyright`** (the local
+- **`eslint`/`typescript`/`pyright`/`typescript-language-server`** (the local
   [`npm-packages`](.devcontainer/base/features/npm-packages) Feature) and
   **`pi-dev`** need `npm`, which only exists once the `node` Feature layer
   applies — both declare `installsAfter: node` so the Feature installer runs
@@ -95,6 +95,35 @@ Published from a separate repo:
 (`claude-code`, `pi-dev`, `speckit`). `speckit` installs the `specify` CLI
 (Spec-Driven Development) via uv; it needs uv (from the Dockerfile) and Python
 (from the `python` Feature), both already in this image.
+
+## LSP code intelligence
+
+The image is wired so the three baked-in AI agent harnesses use **Language
+Server Protocol** (go-to-definition, find-references, hover, diagnostics) —
+semantic, AST-backed answers — instead of grepping/reading files as text. This
+is on by default via `ENABLE_LSP_TOOL=1` (baked as a Dockerfile `ENV`, and set
+again in the root/template `containerEnv` for the swap-image case).
+
+| Agent harness | How LSP is wired | Servers used |
+|-----|-----|-----|
+| **Claude Code** | `claude-code` Feature installs the `pyright-lsp`, `typescript-lsp`, `gopls-lsp` plugins at **user scope** (`claude plugin install`); `ENABLE_LSP_TOOL=1` enables the tool | `pyright-langserver`, `typescript-language-server`, `gopls` |
+| **GitHub Copilot CLI** | user-scope `~/.copilot/lsp-config.json` baked into the image | `pyright-langserver`, `typescript-language-server` |
+| **VS Code Copilot** (agent mode) | first-party built-in `find_symbol` tool (`chat.agent.enabled`) | Pylance (Python extension) + VS Code's built-in TypeScript features |
+
+**Language-server binaries** come from the `npm-packages` Feature
+(`pyright` → `pyright-langserver`, `typescript-language-server`) and the Python
+Feature's Pylance extension. A plugin/config only *wires the connection* — the
+binary must be on `PATH` for a server to activate.
+
+> **Go:** `gopls-lsp` is installed for Claude Code, but `gopls` (the Go
+> toolchain) is **not** baked into this image, so it stays dormant
+> (`Executable not found in $PATH`) until you add a Go Feature +
+> `go install golang.org/x/tools/gopls@latest`. It was omitted from the Copilot
+> CLI config for the same reason.
+
+Bias files are baked to nudge (not force) agents toward LSP: `~/.claude/CLAUDE.md`
+for Claude Code. For repo-scoped bias, add `.github/copilot-instructions.md` (VS
+Code Copilot) or `AGENTS.md` (Copilot CLI) to your project.
 
 ## Alternative: Plain Docker (Debian Trixie)
 
@@ -132,7 +161,7 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 │       ├── devcontainer.json      # build-only definition published by publish-base-image.yml
 │       ├── Dockerfile.mcr-trixie  # source Dockerfile actually baked into the :base image
 │       ├── Dockerfile.trixie      # unused by :base - see "Alternative: Plain Docker" below
-│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, pyright
+│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, pyright, typescript-language-server
 ├── src/base-ai/                # published by publish-templates.yml
 ├── .github/workflows/
 │   ├── publish-templates.yml
