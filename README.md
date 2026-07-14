@@ -100,30 +100,34 @@ Published from a separate repo:
 
 The image is wired so the three baked-in AI agent harnesses use **Language
 Server Protocol** (go-to-definition, find-references, hover, diagnostics) —
-semantic, AST-backed answers — instead of grepping/reading files as text. This
-is on by default via `ENABLE_LSP_TOOL=1` (baked as a Dockerfile `ENV`, and set
-again in the root/template `containerEnv` for the swap-image case).
+semantic, AST-backed answers — instead of grepping/reading files as text. Each
+concern lives in the agent's own Feature, **not** the OS-level Dockerfile.
 
 | Agent harness | How LSP is wired | Servers used |
 |-----|-----|-----|
-| **Claude Code** | `claude-code` Feature installs the `pyright-lsp`, `typescript-lsp`, `gopls-lsp` plugins at **user scope** (`claude plugin install`); `ENABLE_LSP_TOOL=1` enables the tool | `pyright-langserver`, `typescript-language-server`, `gopls` |
-| **GitHub Copilot CLI** | user-scope `~/.copilot/lsp-config.json` baked into the image | `pyright-langserver`, `typescript-language-server` |
-| **VS Code Copilot** (agent mode) | first-party built-in `find_symbol` tool (`chat.agent.enabled`) | Pylance (Python extension) + VS Code's built-in TypeScript features |
+| **Claude Code** | the `claude-code` Feature installs the `pyright-lsp` + `typescript-lsp` plugins at **user scope** (`claude plugin install`, after registering the marketplace) and sets `ENABLE_LSP_TOOL=1` via its `containerEnv` | `pyright-langserver`, `typescript-language-server` |
+| **GitHub Copilot CLI** | user-scope `~/.copilot/lsp-config.json` written by the local `lsp-config` Feature | `pyright-langserver`, `typescript-language-server` |
+| **VS Code Copilot** (agent mode) | first-party built-in `find_symbol` tool (`chat.agent.enabled` in `customizations.vscode.settings`) | Pylance (Python extension) + VS Code's built-in TypeScript features |
 
 **Language-server binaries** come from the `npm-packages` Feature
 (`pyright` → `pyright-langserver`, `typescript-language-server`) and the Python
 Feature's Pylance extension. A plugin/config only *wires the connection* — the
 binary must be on `PATH` for a server to activate.
 
-> **Go:** `gopls-lsp` is installed for Claude Code, but `gopls` (the Go
-> toolchain) is **not** baked into this image, so it stays dormant
-> (`Executable not found in $PATH`) until you add a Go Feature +
-> `go install golang.org/x/tools/gopls@latest`. It was omitted from the Copilot
-> CLI config for the same reason.
+`ENABLE_LSP_TOOL=1` is set by the `claude-code` Feature's `containerEnv` (and
+mirrored in the root/template `containerEnv` for the swap-image case) — it is
+**not** a Dockerfile `ENV`, since it belongs to Claude Code, not the base OS.
+The local [`lsp-config`](.devcontainer/base/features/lsp-config) Feature writes
+the Copilot CLI config and a short `~/.claude/CLAUDE.md` bias (nudge, not force).
 
-Bias files are baked to nudge (not force) agents toward LSP: `~/.claude/CLAUDE.md`
-for Claude Code. For repo-scoped bias, add `.github/copilot-instructions.md` (VS
-Code Copilot) or `AGENTS.md` (Copilot CLI) to your project.
+> **Go:** `gopls-lsp` is **not** installed by default (no Go toolchain / `gopls`
+> in this image). To enable it, add a Go Feature + `go install
+> golang.org/x/tools/gopls@latest`, then add `gopls-lsp@claude-plugins-official`
+> to the `claude-code` Feature's `lspPlugins` and `gopls` to the `lsp-config`
+> Feature's Copilot config.
+
+For repo-scoped bias, add `.github/copilot-instructions.md` (VS Code Copilot) or
+`AGENTS.md` (Copilot CLI) to your project.
 
 ## Alternative: Plain Docker (Debian Trixie)
 

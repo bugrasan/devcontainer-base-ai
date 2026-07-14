@@ -52,6 +52,13 @@
 		// needs npm. Same packages previously installed via postCreateCommand.
 		"./features/npm-packages": {},
 
+		// Local Feature (./features/lsp-config) - bakes the agent LSP config that
+		// used to live in the Dockerfile: ~/.copilot/lsp-config.json (Copilot CLI)
+		// and ~/.claude/CLAUDE.md (Claude Code bias). installsAfter claude-code/
+		// copilot-cli/node so their homes exist first. ENABLE_LSP_TOOL and the
+		// claude plugins themselves are handled by the 'claude-code' Feature above.
+		"./features/lsp-config": {},
+
 		// Published from https://github.com/bugrasan/devcontainers-features -
 		// self-contained native binary installer, no npm/node dependency.
 		// Also installs the LSP plugins (pyright-lsp/typescript-lsp/gopls-lsp) at user

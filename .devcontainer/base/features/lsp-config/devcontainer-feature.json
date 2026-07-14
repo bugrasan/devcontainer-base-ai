@@ -1,0 +1,28 @@
+{
+    // https://containers.dev/implementors/features/
+    "name": "lsp-config",
+    "id": "lsp-config",
+    "version": "1.0.0",
+    "description": "Bakes agent LSP config: a GitHub Copilot CLI ~/.copilot/lsp-config.json (pyright + typescript language servers) and a short ~/.claude/CLAUDE.md bias toward LSP over grep/read for Claude Code. The language-server binaries must be provided separately (this image installs pyright + typescript-language-server via the npm-packages Feature).",
+    "options": {
+        "copilotLspConfig": {
+            "type": "boolean",
+            "default": true,
+            "description": "Write a user-scope ~/.copilot/lsp-config.json wiring pyright-langserver and typescript-language-server for the GitHub Copilot CLI."
+        },
+        "claudeLspBias": {
+            "type": "boolean",
+            "default": true,
+            "description": "Write a short ~/.claude/CLAUDE.md nudging Claude Code to prefer LSP navigation over grep/read."
+        },
+    },
+    // Ordering-only: these Features' installers create/populate the remote user's
+    // home (and, for claude-code, ~/.claude) - run after them so we don't race a
+    // later chown. None of them is a hard dependency; this Feature only writes
+    // plain config files.
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/node",
+        "ghcr.io/devcontainers/features/copilot-cli",
+        "ghcr.io/bugrasan/devcontainers-features/claude-code",
+    ],
+}

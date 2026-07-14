@@ -11,14 +11,13 @@
 find-references, hover, diagnostics) instead of grep/read. Wired for all three
 harnesses baked into the `:base` image:
 
-- **Claude Code** — the `claude-code` Feature installs the `pyright-lsp`,
-  `typescript-lsp`, and `gopls-lsp` plugins at user scope; `ENABLE_LSP_TOOL=1`
-  turns the tool on.
-- **GitHub Copilot CLI** — user-scope `~/.copilot/lsp-config.json` wires the
-  Python + TypeScript servers.
+- **Claude Code** — the `claude-code` Feature installs the `pyright-lsp` +
+  `typescript-lsp` plugins at user scope and sets `ENABLE_LSP_TOOL=1`.
+- **GitHub Copilot CLI** — user-scope `~/.copilot/lsp-config.json` (written by
+  the local `lsp-config` Feature) wires the Python + TypeScript servers.
 - **VS Code Copilot** — the built-in `find_symbol` tool reads from Pylance
   (Python extension) and VS Code's built-in TypeScript features.
 
 Language servers: `pyright-langserver` + `typescript-language-server` (from the
-`npm-packages` Feature). `gopls` is **not** baked in, so `gopls-lsp` stays
-dormant until you add a Go toolchain.
+`npm-packages` Feature). Go is **not** included; add a Go toolchain + the
+`gopls-lsp` plugin if you need it.

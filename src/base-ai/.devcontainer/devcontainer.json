@@ -154,9 +154,6 @@
 		// "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly,consistency=cached",
 		// "source=${localEnv:HOME}/.gitignore,target=/home/vscode/.gitignore,type=bind,readonly,consistency=cached",
 
-		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
-		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
-
 		// **IMPORTANT**:
 		// to enabled named volumes that survive container recreation, we moved to Dockerfile;
 		// to use copy permission on first mount of the named volumes, since they are always created with root permissions
