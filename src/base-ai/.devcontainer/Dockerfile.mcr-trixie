@@ -11,6 +11,9 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y --no-install-recommends \
         bat \
+        bats \
+        bats-assert \
+        bats-file \
         ca-certificates \
         curl \
         eza \
@@ -22,6 +25,7 @@ RUN apt-get update \
         jq \
         just \
         lazygit \
+        mc \
         pass \
         ripgrep \
         shellcheck \
@@ -30,7 +34,8 @@ RUN apt-get update \
         vim-doc \
         vim-scripts \
         xh \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
 
 # Create a user directories to fix bind-mount permissions
 RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
@@ -45,6 +50,12 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
+
+# uv (and anything else installed under ~/.local/bin) needs this on PATH for ALL
+# shells, including non-interactive/non-login ones (e.g. `docker run image bash -c`
+# in the smoke-test) - the uv installer only offers to add it to shell rc files,
+# which aren't sourced in that case.
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 
 # Install chezmoi and apply the same dotfiles source used in devcontainer.json.
 # RUN sh -c "$(curl -fsLS get.chezmoi.io/lb)" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles

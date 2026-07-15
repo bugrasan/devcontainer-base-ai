@@ -11,6 +11,9 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y --no-install-recommends \
         bat \
+        bats \
+        bats-assert \
+        bats-file \
         ca-certificates \
         curl \
         eza \
@@ -22,6 +25,7 @@ RUN apt-get update \
         jq \
         just \
         lazygit \
+        mc \
         pass \
         ripgrep \
         shellcheck \
