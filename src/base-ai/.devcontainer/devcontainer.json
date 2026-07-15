@@ -282,6 +282,13 @@
 
 		// pi.dev is baked into the 'base' image
 		// "pi.dev": "curl -fsSL https://pi.dev/install.sh | sh && echo '14-pi.dev' >> ~/devcontainer-post-create.txt",
+
+		// Disable the copilot-cli Feature's per-start online update check by
+		// removing its flag file. Runs in postCreate (which fully completes before
+		// the Feature's postStart update check), so the check no-ops. 'copilot'
+		// still refreshes to latest at each weekly base-image rebuild. Delete this
+		// line to restore the per-start check.
+		"disable-copilot-autoupdate": "sudo rm -f /etc/devcontainer-copilot-cli/auto-update && echo '15-disable-copilot-autoupdate' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
@@ -315,9 +322,11 @@
 				// https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_add-an-mcp-server-from-the-github-mcp-server-registry
 				"chat.mcp.gallery.enabled": true,
 
-				// VS Code Copilot agent mode + the built-in 'find_symbol' LSP tool.
-				// Pylance (python extension) and VS Code's built-in TypeScript language
-				// features supply the servers; no third-party LSP extension needed.
+				// VS Code Copilot agent mode + the built-in 'usages' (search/usages)
+				// tool - since v1.99; reference it as '#usages'. (NOT 'find_symbol',
+				// which is a Visual Studio 2026 tool, not a VS Code one.) Pylance
+				// (python extension) and VS Code's built-in TypeScript language features
+				// supply the symbol data; no third-party LSP extension needed.
 				"chat.agent.enabled": true,
 
 				// terminal tool auto approve settings

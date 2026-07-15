@@ -107,7 +107,7 @@ concern lives in the agent's own Feature, **not** the OS-level Dockerfile.
 |-----|-----|-----|
 | **Claude Code** | the `claude-code` Feature installs the `pyright-lsp` + `typescript-lsp` plugins at **user scope** (`claude plugin install`, after registering the marketplace) and sets `ENABLE_LSP_TOOL=1` via its `containerEnv` | `pyright-langserver`, `typescript-language-server` |
 | **GitHub Copilot CLI** | user-scope `~/.copilot/lsp-config.json` written by the local `lsp-config` Feature | `pyright-langserver`, `typescript-language-server` |
-| **VS Code Copilot** (agent mode) | first-party built-in `find_symbol` tool (`chat.agent.enabled` in `customizations.vscode.settings`) | Pylance (Python extension) + VS Code's built-in TypeScript features |
+| **VS Code Copilot** (agent mode) | built-in `usages` tool (`search/usages`, since v1.99; reference as `#usages`), with `chat.agent.enabled` in `customizations.vscode.settings` | Pylance (Python extension) + VS Code's built-in TypeScript features |
 
 **Language-server binaries** come from the `npm-packages` Feature
 (`pyright` → `pyright-langserver`, `typescript-language-server`) and the Python
@@ -128,6 +128,17 @@ the Copilot CLI config and a short `~/.claude/CLAUDE.md` bias (nudge, not force)
 
 For repo-scoped bias, add `.github/copilot-instructions.md` (VS Code Copilot) or
 `AGENTS.md` (Copilot CLI) to your project.
+
+### Copilot CLI auto-update
+
+The `copilot-cli` Feature runs an online update check on **every** container
+start (its `postStartCommand`). The root and template `devcontainer.json`
+disable it by removing the Feature's flag file
+(`/etc/devcontainer-copilot-cli/auto-update`) in `postCreateCommand` — which
+runs before that check, so it no-ops. `copilot` still refreshes to the latest
+release at each weekly base-image rebuild; only the per-start network check is
+suppressed. The Feature itself is left untouched (no version pinning). Remove
+the `disable-copilot-autoupdate` `postCreateCommand` entry to restore it.
 
 ## Alternative: Plain Docker (Debian Trixie)
 

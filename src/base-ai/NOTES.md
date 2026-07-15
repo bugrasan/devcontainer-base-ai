@@ -15,9 +15,18 @@ harnesses baked into the `:base` image:
   `typescript-lsp` plugins at user scope and sets `ENABLE_LSP_TOOL=1`.
 - **GitHub Copilot CLI** — user-scope `~/.copilot/lsp-config.json` (written by
   the local `lsp-config` Feature) wires the Python + TypeScript servers.
-- **VS Code Copilot** — the built-in `find_symbol` tool reads from Pylance
+- **VS Code Copilot** — the built-in `usages` tool (`#usages`, since v1.99;
+  *not* `find_symbol`, which is a Visual Studio 2026 tool) reads from Pylance
   (Python extension) and VS Code's built-in TypeScript features.
 
 Language servers: `pyright-langserver` + `typescript-language-server` (from the
 `npm-packages` Feature). Go is **not** included; add a Go toolchain + the
 `gopls-lsp` plugin if you need it.
+
+## Copilot CLI auto-update
+
+The `copilot-cli` Feature runs an online update check on every container start.
+It's disabled here by removing the Feature's flag file
+(`/etc/devcontainer-copilot-cli/auto-update`) in `postCreateCommand`, so you
+still get the latest `copilot` at each weekly base-image rebuild without the
+per-start network check. Delete that `postCreateCommand` entry to restore it.
