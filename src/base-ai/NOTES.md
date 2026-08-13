@@ -23,6 +23,20 @@ Language servers: `pyright-langserver` + `typescript-language-server` (from the
 `npm-packages` Feature). Go is **not** included; add a Go toolchain + the
 `gopls-lsp` plugin if you need it.
 
+## OpenTelemetry Collector (not auto-started)
+
+The `otel-collector-contrib` Feature is baked into the `:base` image with
+`autoStart: false`: only the `otelcol-contrib` binary and its default OTLP →
+Azure Application Insights config (`/etc/otelcol-contrib/config.yaml`) are
+installed — nothing runs and nothing listens on 4317/4318 at container start.
+Start it manually when needed:
+
+```bash
+# only needed for the default config (resolved at collector startup, never baked in)
+export APPLICATIONINSIGHTS_CONNECTION_STRING=...
+otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+```
+
 ## Copilot CLI auto-update
 
 The `copilot-cli` Feature runs an online update check on every container start.
