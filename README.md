@@ -54,7 +54,8 @@ a build-only definition (not meant to be opened in VS Code) that builds
 [Dockerfile.mcr-trixie](.devcontainer/base/Dockerfile.mcr-trixie) plus the same
 Features as the root devcontainer.json (`common-utils`, `sshd`, `node`,
 `python`, `github-cli`, `copilot-cli`, plus the local `npm-packages` Feature
-and the published `claude-code`/`pi-dev`/`speckit` Features), baking them all into:
+and the published `claude-code`/`pi-dev`/`speckit`/`otel-collector-contrib`
+Features), baking them all into:
 
 ```
 ghcr.io/bugrasan/devcontainer-base-ai/base:latest
@@ -71,6 +72,28 @@ just references this image (`"image": "ghcr.io/.../base:latest"`) instead of
 building the Dockerfile locally, so its equivalent `postCreateCommand` steps
 (apt packages, etc.) stay commented out — they're only a fallback for a plain
 Microsoft base image.
+
+### OpenTelemetry Collector (`otel-collector-contrib`, not auto-started)
+
+The published
+[`otel-collector-contrib`](https://github.com/bugrasan/devcontainers-features/tree/main/src/otel-collector-contrib)
+Feature bakes the `otelcol-contrib` binary and a default OTLP → Azure
+Application Insights config (`/etc/otelcol-contrib/config.yaml`) into the
+image — with **`autoStart: false`**: `AUTO_START=false` is baked into the
+Feature's `postStartCommand` hook at image-build time, so it exits immediately
+on every container start. Nothing runs and nothing listens on 4317/4318 until
+you start the collector yourself:
+
+```bash
+# only needed for the default config (resolved at collector startup, never baked in)
+export APPLICATIONINSIGHTS_CONNECTION_STRING=...
+otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+```
+
+Use `--config <path>` with your own file to skip the App Insights default
+entirely. (With `autoStart` disabled, the Feature's
+`/usr/local/share/otel-collector-contrib/start.sh` helper is a no-op — run the
+binary directly as above.)
 
 ### Why `pi`/`claude`/npm packages are Features, not Dockerfile `RUN` lines
 
