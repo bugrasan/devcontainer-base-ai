@@ -84,8 +84,6 @@
 		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
 		// "ghcr.io/devcontainers/features/copilot-cli:1": {},
 
-<<<<<<< HEAD
-=======
 		// otel-collector-contrib is baked into the 'base' image with autoStart=false:
 		// only the otelcol-contrib binary and its default OTLP -> Azure Application
 		// Insights config (/etc/otelcol-contrib/config.yaml) are installed - nothing
@@ -99,7 +97,6 @@
 		// 	"autoStart": false
 		// },
 
->>>>>>> 845aa6391dbcc443afcd359a3530a9dab702613f
 		// https://github.com/devcontainers/features/tree/main/src/azure-cli
 		// 	// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
 		// 	"ghcr.io/devcontainers/features/azure-cli:1": {},
