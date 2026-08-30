@@ -22,15 +22,18 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
-	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
-	// claude-code, pi-dev, speckit), pre-baked and published every Saturday 06:54 UTC by
-	// .github/workflows/publish-base-image.yml
+	// Dockerfile.trixie + the Features below, pre-baked and published every
+	// Saturday 06:54 UTC by .github/workflows/publish-base-image.yml
 	// (see .devcontainer/base/devcontainer.json for the build definition).
+	// w/ baked-in features 'common-utils', 'node', 'python', 'github-cli', 'copilot-cli'
 	"image": "ghcr.io/bugrasan/devcontainer-base-ai/base:latest",
 
 	// either image or self-build docker image
 	// "build": {
-	// 	"dockerfile": "base/Dockerfile.trixie"
+		// base on debian vanilla trixie
+	// 	"dockerfile": "Dockerfile.trixie"
+		// based on microsoft debian trixie
+	// 	"dockerfile": "Dockerfile.mcr-trixie"
 	// },
 
 
@@ -43,7 +46,7 @@
 		// 	"username": "vscode"
 		// },
 
-		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json)
+		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json).
 		// https://github.com/devcontainers/features/tree/main/src/sshd
 		// "ghcr.io/devcontainers/features/sshd:1": {},
 
@@ -79,13 +82,22 @@
 
 		// https://github.com/devcontainers/features/blob/main/src/copilot-cli/
 		// "ghcr.io/devcontainers/features/copilot-cli:1": {},
-		
+
 		// https://github.com/devcontainers/features/tree/main/src/azure-cli
 		// 	// **IMPORTANT**: disable telemetry with `az config set core.collect_telemetry=false`
 		// 	"ghcr.io/devcontainers/features/azure-cli:1": {},
 
 		// https://github.com/devcontainers/features/tree/main/src/aws-cli
 		// "ghcr.io/devcontainers/features/aws-cli:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features
+		// "ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features
+		// "ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features
+		// "ghcr.io/bugrasan/devcontainers-features/speckit:1": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -240,6 +252,9 @@
 
 		// revoke unwanted ssh-forwarding: see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"SSH_AUTH_SOCK": "",
+		// securing: https://www.danieldemmel.me/blog/coding-agents-in-secured-vscode-dev-containers
+		"GPG_AGENT_INFO": "",
+		"WAYLAND_DISPLAY": null,
 	},
 
 
@@ -255,11 +270,8 @@
 		// Ubuntu
 		//"ubuntu-dpkg": "sudo apt update && sudo apt install -y --no-install-recommends vim vim-scripts vim-doc shellcheck eza batcat fd-find ripgrep fzf jq gnupg2 pass keepassxc && sudo apt clean && echo '01-ubuntu-dpkg' >> ~/devcontainer-post-create.txt",
 
-		// npm-packages, claude-code, pi-dev and speckit are baked into the 'base' image
-		// now, as Features (see .devcontainer/base/devcontainer.json and
-		// .devcontainer/base/features/npm-packages) - installsAfter the 'node' Feature
-		// where they need npm, so they no longer need to wait for postCreateCommand.
-		// (speckit needs uv + Python, both already in the base image, not npm.)
+		// npm-packages are baked into the 'base' image (see .devcontainer/base/).
+		// "npm-packages": "npm install -g editorconfig eslint typescript pyright && echo '02-npm-packages' >> ~/devcontainer-post-create.txt",
 
 		// openai codex cli
 		// https://github.com/openai/codex
@@ -267,7 +279,7 @@
 
 		//"langchain": "pip install langchain langchain-openai langchain-anthropic langgraph-cli[inmem] && echo '08-langchain' >> ~/devcontainer-post-create.txt",
 
-		// uv is baked into the base image's Dockerfile (doesn't need npm), so no need to run it here
+		// uv is baked into the 'base' image's Dockerfile
 		// "uv": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo '09-uv' >> ~/devcontainer-post-create.txt",
 
 		// git based - codeberg can be replaced w/ gitlab.com or github.com
@@ -277,6 +289,8 @@
 
 		// see https://github.com/microsoft/vscode-remote-release/issues/11014
 		"revoke-ssh-forwarding": "find /tmp -maxdepth 1 -name 'vscode-ssh-auth-*.sock' -delete 2>/dev/null || true && echo '11-revoke-ssh-forwarding' >> ~/devcontainer-post-create.txt",
+		// see https://www.danieldemmel.me/blog/coding-agents-in-secured-vscode-dev-containers
+		"revoke-vscode-sockets": "find /tmp -maxdepth 2 \\( -name 'vscode-ssh-auth-*.sock' -o -name 'vscode-remote-containers-ipc-*.sock' -o -name 'vscode-remote-containers-*.js' \\) -delete 2>/dev/null || true && echo '11-revoke-vscode-sockets' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode/issues/324870
 		"authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
@@ -357,7 +371,7 @@
 
 				// AI extensions
 				"anthropic.claude-code",
-				
+
 				// VS Code Copilot
 				"ms-vscode.vscode-chat-customizations-evaluations",
 				// will be enabled on local host and not in container

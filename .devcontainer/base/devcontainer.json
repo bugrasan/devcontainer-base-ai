@@ -59,7 +59,7 @@
 		// claude plugins themselves are handled by the 'claude-code' Feature above.
 		"./features/lsp-config": {},
 
-		// Published from https://github.com/bugrasan/devcontainers-features -
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/claude-code
 		// self-contained native binary installer, no npm/node dependency.
 		// Also installs the LSP plugins (pyright-lsp/typescript-lsp/gopls-lsp) at user
 		// scope and sets ENABLE_LSP_TOOL=1 via its default 'lspPlugins' option. The
@@ -67,12 +67,12 @@
 		// typescript-language-server); gopls stays dormant until a Go toolchain is added.
 		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
 
-		// Published from https://github.com/bugrasan/devcontainers-features -
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/pi-dev
 		// installsAfter node, since it hard-requires Node.js >=22.19.0 + npm.
 		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
 
-		// Published from https://github.com/bugrasan/devcontainers-features - installs
-		// the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/speckit
+		// installs the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+
 		// (the python Feature above) and uv (baked into Dockerfile.mcr-trixie), both
 		// already present, so it neither installs nor depends on them (installsAfter
 		// python only, for cache ordering).
