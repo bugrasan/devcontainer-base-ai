@@ -76,6 +76,21 @@
 		// (the python Feature above) and uv (baked into Dockerfile.mcr-trixie), both
 		// already present, so it neither installs nor depends on them (installsAfter
 		// python only, for cache ordering).
-		"ghcr.io/bugrasan/devcontainers-features/speckit:1": {}
+		"ghcr.io/bugrasan/devcontainers-features/speckit:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features - installs
+		// the OpenTelemetry Collector Contrib binary (otelcol-contrib, multi-arch
+		// tarball from open-telemetry/opentelemetry-collector-releases) plus a default
+		// OTLP -> Azure Application Insights config at /etc/otelcol-contrib/config.yaml.
+		// autoStart is explicitly disabled: the Feature's postStartCommand hook
+		// (/usr/local/share/otel-collector-contrib/start.sh) has AUTO_START=false baked
+		// in at image-build time and exits immediately on every container start, so
+		// nothing runs and nothing listens on 4317/4318 unless started manually:
+		//   otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+		// (the default config resolves ${env:APPLICATIONINSIGHTS_CONNECTION_STRING}
+		// at collector startup, so export it first - it is never baked into the image).
+		"ghcr.io/bugrasan/devcontainers-features/otel-collector-contrib:1": {
+			"autoStart": false
+		}
 	}
 }
