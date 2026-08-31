@@ -149,7 +149,7 @@
 	// so `ssh -p 2222 vscode@localhost` works even without an active VS Code Dev
 	// Containers session (forwardPorts is a dynamic tunnel that only exists while a
 	// session is open). Uncomment to switch to this instead.
-	// "appPort": ["2222:2222"],
+	// "appPort": ["127.0.0.1:2222:2222"],
 
 	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
 	// initializeCommand runs on the HOST before the container starts.
