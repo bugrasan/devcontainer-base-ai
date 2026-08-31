@@ -112,6 +112,9 @@
 
 		// Published from https://github.com/bugrasan/devcontainers-features
 		// "ghcr.io/bugrasan/devcontainers-features/speckit:1": {}
+
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/superfile
+		// "ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

@@ -16,6 +16,7 @@ RUN apt-get update \
         bats-file \
         ca-certificates \
         curl \
+        exiftool \
         eza \
         fastfetch \
         fd-find \
@@ -27,6 +28,7 @@ RUN apt-get update \
         lazygit \
         mc \
         pass \
+        poppler-utils \
         ripgrep \
         shellcheck \
         sudo \

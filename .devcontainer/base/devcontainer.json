@@ -91,6 +91,9 @@
 		// at collector startup, so export it first - it is never baked into the image).
 		"ghcr.io/bugrasan/devcontainers-features/otel-collector-contrib:1": {
 			"autoStart": false
-		}
+		},
+
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/superfile
+		"ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
 	}
 }
