@@ -54,8 +54,8 @@ a build-only definition (not meant to be opened in VS Code) that builds
 [Dockerfile.mcr-trixie](.devcontainer/base/Dockerfile.mcr-trixie) plus the same
 Features as the root devcontainer.json (`common-utils`, `sshd`, `node`,
 `python`, `github-cli`, `copilot-cli`, plus the local `npm-packages` Feature
-and the published `claude-code`/`pi-dev`/`speckit`/`otel-collector-contrib`
-Features), baking them all into:
+and the published `claude-code`/`pi-dev`/`speckit`/`otel-collector-contrib`/
+`superfile`/`herdr` Features), baking them all into:
 
 ```
 ghcr.io/bugrasan/devcontainer-base-ai/base:latest
@@ -115,9 +115,12 @@ binary directly as above.)
 
 Published from a separate repo:
 [bugrasan/devcontainers-features](https://github.com/bugrasan/devcontainers-features)
-(`claude-code`, `pi-dev`, `speckit`). `speckit` installs the `specify` CLI
-(Spec-Driven Development) via uv; it needs uv (from the Dockerfile) and Python
-(from the `python` Feature), both already in this image.
+(`claude-code`, `pi-dev`, `speckit`, `otel-collector-contrib`, `superfile`,
+`herdr`). `speckit` installs the `specify` CLI (Spec-Driven Development) via
+uv; it needs uv (from the Dockerfile) and Python (from the `python` Feature),
+both already in this image. `herdr` installs the terminal multiplexer coding
+agents run in; it installs the binary only and starts nothing, so run `herdr`
+to open or reattach to a session.
 
 ## LSP code intelligence
 

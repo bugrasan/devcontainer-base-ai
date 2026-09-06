@@ -94,6 +94,18 @@
 		},
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/superfile
-		"ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
+		"ghcr.io/bugrasan/devcontainers-features/superfile:1": {},
+
+		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
+		// herdr is a background server that owns the terminals coding agents run
+		// in. The Feature installs the binary only - nothing is started at
+		// container start; run 'herdr' to open or reattach to a session.
+		// Defaults are kept: a container-friendly ~/.config/herdr/config.toml
+		// (skips the first-run wizard, stops both background calls to herdr.dev),
+		// herdr's agent skill at ~/.claude/skills/herdr/SKILL.md, and bash/zsh
+		// completions. The skill guards itself on HERDR_ENV=1, so it stays inert
+		// for an agent not started inside a herdr pane - which makes it free to
+		// bake alongside the claude-code Feature above.
+		"ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
 	}
 }
