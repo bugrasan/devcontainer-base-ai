@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "src/**"
+      - ".github/workflows/publish-templates.yml"
   workflow_dispatch: {}
 
 jobs:
@@ -13,11 +14,18 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
+      # contents: write covers both the ghcr publish and pushing the
+      # regenerated docs to main. No pull-requests scope is needed any more -
+      # this workflow no longer opens PRs.
       packages: write
       contents: write
-      pull-requests: write
     steps:
+      # Full history: the documentation step below may need to rebase onto a
+      # main that moved while this job was running, which a shallow clone
+      # (checkout's default fetch-depth: 1) cannot do.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Publishes each src/<templateId> as an OCI artifact to
       # ghcr.io/bugrasan/devcontainer-base-ai/<templateId>, plus a collection
@@ -33,29 +41,57 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create PR for Documentation
-        id: push_image_info
+      # Commit the regenerated READMEs straight back to main.
+      #
+      # This previously opened an "Automated documentation update" PR on every
+      # publish. Nothing ever merged them, so they accumulated - 5 were open by
+      # Sep 2026, the oldest dating to Aug 13 - and each aged against a main
+      # that had long moved on, so merging an old one would drag stale docs
+      # back. The docs are mechanically derived from devcontainer-template.json
+      # + NOTES.md, so there is nothing to review: committing directly keeps
+      # them in sync and leaves no backlog. This mirrors the same fix already
+      # made in bugrasan/devcontainers-features (commit 02bf143).
+      #
+      # This does NOT re-trigger this workflow, despite writing to src/**,
+      # which the 'on.push.paths' filter above matches. Two independent guards:
+      #   1. GitHub does not start new workflow runs for pushes made with the
+      #      default GITHUB_TOKEN (its built-in recursion protection).
+      #   2. The commit message carries [skip ci].
+      # Either alone suffices; keep both, and keep [skip ci] in the message if
+      # this is ever switched to a PAT or deploy key, which would defeat (1).
+      - name: Commit documentation updates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
-          echo "Start."
+          set -euo pipefail
 
-          # Configure git and push updates
-          git config --global user.email github-actions[bot]@users.noreply.github.com
-          git config --global user.name github-actions[bot]
-          git config pull.rebase false
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
 
-          branch=automated-documentation-update-$GITHUB_RUN_ID
-          git checkout -b $branch
-          message='Automated documentation update'
+          # Only the generated docs - never anything else the publish step may
+          # have touched in the working tree.
+          git add -- 'src/*/README.md'
 
-          # Add / update and commit
-          git add */**/README.md
-          git commit -m 'Automated documentation update [skip ci]' || export NO_UPDATES=true
-
-          # Push
-          if [ "$NO_UPDATES" != "true" ] ; then
-              git push origin "$branch"
-              gh pr create --title "$message" --body "$message"
+          if git diff --cached --quiet; then
+              echo "Documentation is already up to date - nothing to commit."
+              exit 0
           fi
+
+          echo "Documentation changes to commit:"
+          git diff --cached --stat
+
+          git commit -m 'Automated documentation update [skip ci]'
+
+          # Another publish can land on main while this job runs, making the
+          # push a non-fast-forward. Rebase onto the new tip and retry.
+          for attempt in 1 2 3; do
+              if git push origin HEAD:main; then
+                  echo "Documentation update pushed to main."
+                  exit 0
+              fi
+              echo "Push rejected (attempt ${attempt}/3); rebasing onto the latest main..."
+              git pull --rebase origin main
+          done
+
+          echo "ERROR: could not push the documentation update to main after 3 attempts." >&2
+          exit 1
