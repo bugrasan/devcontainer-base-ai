@@ -59,6 +59,18 @@ jobs:
       #   2. The commit message carries [skip ci].
       # Either alone suffices; keep both, and keep [skip ci] in the message if
       # this is ever switched to a PAT or deploy key, which would defeat (1).
+      #
+      # CAUTION, and this repo has already been bitten: that marker is matched
+      # anywhere in a commit message, not just on the first line, and it skips
+      # EVERY workflow the commit would have triggered - not only this one. So
+      # never write it literally in a commit message, or in PR text that
+      # becomes a squash-merge message. The commit that introduced this very
+      # step (8b2cd1c, #23) quoted the marker in prose while explaining the
+      # guard, and so started no runs at all on its own push to main; the fix
+      # had to be validated by hand through workflow_dispatch. The same thing
+      # happened in bugrasan/devcontainers-features at 02bf143. Describe it as
+      # "the skip-CI marker" in prose instead of writing the token.
+      # https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
       - name: Commit documentation updates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
