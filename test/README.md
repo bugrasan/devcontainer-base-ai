@@ -16,7 +16,7 @@ bats test/unit
 
 | File | Covers |
 |---|---|
-| `select-prunable-versions.bats` | "current plus two past versions" against a fixed version list — which versions are deleted, which are protected, and that `keep=0` is refused |
+| `select-prunable-versions.bats` | "current plus two past versions" against a fixed version list — which versions are deleted, which are protected, that `keep=0` is refused, that digests survive being passed newline-separated the way the caller builds them, and that the tag format the workflow publishes is still recognised as a release |
 | `templates.bats` | every `devcontainer.json` parses as JSONC; each template renders with its option defaults; the sandbox template really does drop capabilities, clear the host handles, and never mount a private key |
 
 `render-template.sh` and `parse-jsonc.js` are helpers, not tests. Three
@@ -47,5 +47,5 @@ They are mounted rather than baked in, so test code never ships in the image.
 
 | File | Covers |
 |---|---|
-| `smoke.sh` | every tool resolves and answers `--version`; no `sudo`; nothing writable outside the home; no host keys; the agent LSP config; telemetry defaults; the shell hardening in all three shell shapes |
-| `sshd.sh` | host keys generated on first start, sshd running as `vscode`, a real public-key login, a second run changing nothing, and `START_SSHD=false` honoured |
+| `smoke.sh` | every tool resolves and answers its version flag **successfully**; no `sudo`, no `pi-dev`, no setuid or setgid binaries; the system tool directories are not writable; no baked host keys; the agent LSP config; telemetry defaults; the OTLP connection string still a runtime placeholder; the shell hardening in each bash shape |
+| `sshd.sh` | host keys generated on first start, sshd running as `vscode`, a real public-key login, a second run changing nothing, and `START_SSHD=false` taking the no-start path without touching keys or the running sshd |

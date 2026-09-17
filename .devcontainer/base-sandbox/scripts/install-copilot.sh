@@ -26,4 +26,6 @@ tar -xzf "${tmpdir}/${asset}" -C "${tmpdir}/extract"
 bin="$(find "${tmpdir}/extract" -type f -name copilot | head -n1)"
 [ -n "${bin}" ] || die "no 'copilot' binary in ${asset}"
 install -m 0755 "${bin}" /usr/local/bin/copilot
+# Fail here rather than in CI if the download was for the wrong architecture.
+/usr/local/bin/copilot --version > /dev/null || die "copilot was installed but does not run."
 log "GitHub Copilot CLI installed"

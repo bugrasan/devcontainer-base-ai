@@ -53,8 +53,10 @@ jq -r \
     --arg protected_tags "${PROTECTED_TAGS}" \
     --arg protected_digests "${PROTECTED_DIGESTS}" \
     --arg tag_pattern "${TAG_PATTERN}" '
-    ($protected_tags     | split(" ") | map(select(length > 0))) as $keep_tags
-    | ($protected_digests | split(" ") | map(select(length > 0))) as $keep_digests
+    # splits/1 on a whitespace regex, not split/1 on a literal " ": the caller
+    # builds these lists from command output, which is newline-separated.
+    ($protected_tags     | [splits("[[:space:]]+")] | map(select(length > 0))) as $keep_tags
+    | ($protected_digests | [splits("[[:space:]]+")] | map(select(length > 0))) as $keep_digests
 
     # Release versions: the dated tags this workflow publishes, newest first by
     # creation time - a rebuilt tag keeps its name but not its position.

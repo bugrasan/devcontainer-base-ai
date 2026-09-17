@@ -119,13 +119,14 @@ jobs:
         id: tag
         run: echo "release_tag=$(date -u +%Y%m%d)-${GITHUB_SHA::7}" >> "${GITHUB_OUTPUT}"
 
-      - name: Merge the platform images into multi-arch manifests
+      # ONLY the dated tag here. :latest is what the template pins, so it is
+      # moved by the promote job below, after the smoke test has passed - a
+      # build that fails every check must never be what consumers pull.
+      - name: Merge the platform images into a multi-arch manifest
         run: |
-          for tag in latest "${{ steps.tag.outputs.release_tag }}"; do
-            docker buildx imagetools create -t "${IMAGE}:${tag}" \
-              "${IMAGE}:latest-linux-amd64" \
-              "${IMAGE}:latest-linux-arm64"
-          done
+          docker buildx imagetools create -t "${IMAGE}:${{ steps.tag.outputs.release_tag }}" \
+            "${IMAGE}:latest-linux-amd64" \
+            "${IMAGE}:latest-linux-arm64"
 
   # Verifies the published multi-arch image on both architectures.
   smoke-test:
@@ -148,16 +149,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Everything below tests the DATED tag, not :latest - :latest does not
+      # point at this build yet.
       - name: Pull the image
-        run: docker pull "${IMAGE}:latest"
-
-      # The dated tag is what retention counts, so a build that fails to
-      # publish one must not pass.
-      - name: The dated release tag resolves
-        run: |
-          docker buildx imagetools inspect \
-            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}" > /dev/null
-          echo "published ${IMAGE}:${{ needs.manifest.outputs.release_tag }}"
+        run: docker pull "${IMAGE}:${{ needs.manifest.outputs.release_tag }}"
 
       # Under exactly the restrictions the template applies, so the test proves
       # the image works when sandboxed rather than when unconfined.
@@ -171,7 +166,7 @@ jobs:
             --cap-drop=ALL --security-opt=no-new-privileges \
             --entrypoint bash \
             -v "${PWD}/test/container:/test:ro" \
-            "${IMAGE}:latest" /test/smoke.sh
+            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}" /test/smoke.sh
 
       - name: SSH host-key generation and login (hardened)
         run: |
@@ -179,7 +174,7 @@ jobs:
             --cap-drop=ALL --security-opt=no-new-privileges \
             --entrypoint bash \
             -v "${PWD}/test/container:/test:ro" \
-            "${IMAGE}:latest" /test/sshd.sh
+            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}" /test/sshd.sh
 
       # The plain 'docker run' path: the image entrypoint must bring sshd up on
       # its own, with keys that exist nowhere in the image.
@@ -187,7 +182,7 @@ jobs:
         run: |
           docker run --rm -d --name entrypoint-test \
             --cap-drop=ALL --security-opt=no-new-privileges \
-            "${IMAGE}:latest" sleep 60
+            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}" sleep 60
           for _ in $(seq 1 20); do
             docker exec entrypoint-test bash -lc 'ss -ltn | grep -q ":2222"' && break
             sleep 1
@@ -203,11 +198,36 @@ jobs:
           '
           docker rm -f entrypoint-test
 
-  # Retention: keep the current release plus the two before it, and remove the
-  # untagged per-architecture manifests the dropped ones leave behind. Runs only
-  # after the smoke test passes, so a broken build never deletes a good image.
-  prune:
+  # Only now does :latest move. Retagging an already-published manifest costs a
+  # few seconds and pushes no blobs.
+  promote:
     needs: [manifest, smoke-test]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Promote the tested image to :latest
+        run: |
+          docker buildx imagetools create -t "${IMAGE}:latest" \
+            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}"
+          echo "${IMAGE}:latest now points at ${{ needs.manifest.outputs.release_tag }}"
+
+  # Retention: keep the current release plus the two before it, and remove the
+  # untagged per-architecture manifests the dropped ones leave behind. Runs last,
+  # after :latest has been promoted, so it can see what :latest points at.
+  prune:
+    needs: [manifest, smoke-test, promote]
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -226,10 +246,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # GHCR_PAT is optional: a repository GITHUB_TOKEN can list versions of a
-      # user-owned package but is usually refused on DELETE. Without it the
-      # script reports the remedy and exits 0 - it never fails a run whose
-      # image is already published.
+      # The default GITHUB_TOKEN is enough here - confirmed on the first real
+      # run. GHCR_PAT is an optional override for the case where GitHub refuses
+      # DELETE on a user-owned package; the script reports that remedy and
+      # exits 0 rather than failing a run whose image is already published.
       - name: Prune old versions
         env:
           GITHUB_TOKEN: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}

@@ -59,7 +59,7 @@ costs, and how to enable the other two is in
   GPG agent, browser, VS Code IPC and git-credential variables; the image clears
   them again in login shells, interactive shells and `bash -c`;
   `postStartCommand` deletes the matching sockets from `/tmp` and keeps sweeping
-  for five minutes
+  for as long as the container runs
 - **Layer 2 — no privilege to take.** No `sudo` in the image, `--cap-drop=ALL`
   and `--security-opt=no-new-privileges` in `runArgs`
 - **Layer 3 — Docker socket proxy** and **Layer 4 — outbound egress allowlist**
@@ -68,6 +68,9 @@ costs, and how to enable the other two is in
 
 The `code` CLI does not work inside the container. That is layer 1 working:
 the socket it needs is the one that executes commands in your host VS Code.
+
+There is no `sudo`, and the image ships no setuid binaries either, so there is
+no path from the container's user to root.
 
 ### What breaks
 

@@ -144,6 +144,11 @@ ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox:latest
 Everything each Feature used to do is a `RUN` line calling a script in
 [.devcontainer/base-sandbox/scripts/](.devcontainer/base-sandbox/scripts/):
 version resolution, architecture mapping and checksum verification included.
+Node.js is verified against upstream's `SHASUMS256.txt`; the release tarballs
+are verified against each project's published checksums file where one exists,
+and the build fails if that file is reachable but the checksum does not match.
+Every downloaded binary is executed once at build time, so a wrong-architecture
+download fails the build rather than the smoke test.
 
 | | `:base` | `:base-sandbox` |
 |---|---|---|
@@ -187,19 +192,22 @@ minutes after the `:base` build, so the two do not compete for runners).
 Scheduled runs build with `--no-cache`, since a cached `apt-get upgrade` would
 replay the previous week's packages.
 
-Every build publishes two tags: the floating `:latest` and an immutable
-`:YYYYMMDD-<short-sha>`. After a successful smoke test,
+Every build publishes an immutable `:YYYYMMDD-<short-sha>` first and tests
+**that** tag; `:latest` is only moved onto it once the smoke test has passed, so
+a broken build is never what consumers pull. After that,
 [.github/scripts/prune-ghcr-versions.sh](.github/scripts/prune-ghcr-versions.sh)
 keeps the current dated release plus the two before it and deletes the rest,
 including the untagged per-architecture manifests the dropped ones leave behind.
 `:latest`, `:latest-linux-*` and `:buildcache-*`, and the children of everything
 kept, are never touched.
 
-> A repository `GITHUB_TOKEN` can list versions of a **user-owned** package but
-> is usually refused on DELETE. Add a `GHCR_PAT` repository secret (a personal
-> access token with `delete:packages`) to enable retention. Without it the step
-> logs the remedy as a warning and exits cleanly — it never fails a run whose
-> image is already published.
+> Retention runs on the default `GITHUB_TOKEN` — confirmed on the first real
+> run, which deleted 4 of 9 versions. If that ever changes (GitHub has refused
+> DELETE on user-owned packages in other setups), add a `GHCR_PAT` repository
+> secret holding a personal access token with `delete:packages`; the workflow
+> prefers it when present. Without a usable token the step logs the remedy as a
+> warning and exits cleanly — it never fails a run whose image is already
+> published.
 
 ## Dev Container Template: `base-sandbox-template`
 

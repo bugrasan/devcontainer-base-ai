@@ -80,7 +80,7 @@ read_config() {
 }
 
 @test "base-sandbox-template never mounts the private SSH key" {
-    run grep -E 'id_ed25519[^.]' "${REPO_ROOT}/src/base-sandbox-template/.devcontainer/devcontainer.json"
+    run grep -E 'id_ed25519($|[^.])' "${REPO_ROOT}/src/base-sandbox-template/.devcontainer/devcontainer.json"
     [ "$status" -ne 0 ]
 }
 

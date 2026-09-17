@@ -65,6 +65,34 @@ JSON
     [ "$(echo "${output}" | grep -cx 301)" -eq 0 ]
 }
 
+# The form prune-ghcr-versions.sh actually builds: 'imagetools inspect' prints
+# one digest per line. An earlier version split on a literal " " and so
+# protected nothing, which deleted the per-architecture children of :latest and
+# left the tag unpullable.
+@test "protects children passed newline-separated, as the caller builds them" {
+    output="$(fixture | "${SELECT}" 3 "${PROTECTED_TAGS}" "$(printf ' sha256:ddd1\nsha256:ddd2')")"
+    [ "$(echo "${output}" | grep -cx 300)" -eq 0 ]
+    [ "$(echo "${output}" | grep -cx 301)" -eq 0 ]
+}
+
+@test "protects tags passed newline-separated too" {
+    output="$(fixture | "${SELECT}" 1 "$(printf 'latest\nlatest-linux-amd64')" "")"
+    [ "$(echo "${output}" | grep -cx 105)" -eq 0 ]
+    [ "$(echo "${output}" | grep -cx 200)" -eq 0 ]
+}
+
+# Pins the selector's pattern to the tag format the workflow actually builds.
+# If either side changes alone, retention silently stops recognising releases.
+@test "the tag format the workflow publishes is recognised as a release" {
+    tag="$(date -u +%Y%m%d)-0123abc"
+    input="$(printf '[{"id": 1, "name": "sha256:x", "created_at": "2026-09-12T06:54:00Z",
+             "metadata": {"container": {"tags": ["%s"]}}}]' "${tag}")"
+    output="$(echo "${input}" | "${SELECT}" 3 "${PROTECTED_TAGS}" "")"
+    [ -z "${output}" ]
+    kept="$(echo "${input}" | "${SELECT}" --mode kept-tags 3 "${PROTECTED_TAGS}" "")"
+    [ "${kept}" = "${tag}" ]
+}
+
 @test "keep=5 with five releases deletes no release" {
     output="$(fixture | "${SELECT}" 5 "${PROTECTED_TAGS}" "")"
     for id in 101 102 103 104 105; do

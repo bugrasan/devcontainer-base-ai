@@ -16,14 +16,24 @@ no() {
     fail=$((fail + 1))
 }
 
-# A tool is present when it resolves on PATH and answers --version.
+# A tool is present when it resolves on PATH AND answers its version flag
+# successfully. Checking the exit status matters: several of these binaries are
+# downloaded tarballs, and a wrong-architecture build is on PATH and runs - it
+# just fails. An earlier version of this helper ignored the status and reported
+# 'ok' for a binary that printed an error.
 have() {
-    local name="$1" version_flag="${2:---version}" out
+    local name="$1" version_flag="${2:---version}" out status
     if ! command -v "${name}" > /dev/null 2>&1; then
         no "${name} is not on PATH"
         return 1
     fi
-    out="$("${name}" "${version_flag}" 2>&1 | head -n1)"
+    out="$("${name}" "${version_flag}" 2>&1)"
+    status=$?
+    out="$(echo "${out}" | head -n1)"
+    if [ "${status}" -ne 0 ]; then
+        no "${name} ${version_flag} exited ${status}: ${out}"
+        return 1
+    fi
     ok "${name}: ${out}"
 }
 
@@ -50,7 +60,9 @@ refute "no sudo binary on PATH" command -v sudo
 refute "no /usr/bin/sudo" test -e /usr/bin/sudo
 refute "no sudoers drop-in for vscode" test -e /etc/sudoers.d/vscode
 refute "vscode is not in the sudo group" bash -c 'id -nG | tr " " "\n" | grep -qx sudo'
-refute "cannot write /usr/local/bin" bash -c 'touch /usr/local/bin/.wtest'
+for d in /usr/local/bin /usr/local/node/bin /usr/local/share/base-sandbox /etc/ssh /etc/otelcol-contrib; do
+    refute "cannot write ${d}" bash -c "touch '${d}/.wtest'"
+done
 
 echo "== no baked SSH host keys =="
 refute "no /etc/ssh host private keys" bash -c 'ls /etc/ssh/ssh_host_*_key'
@@ -106,8 +118,17 @@ have bats
 echo "== npm-provided tooling =="
 have eslint
 have tsc
-have pyright-langserver
+have pyright
+check "pyright-langserver is on PATH" command -v pyright-langserver
 have typescript-language-server
+
+echo "== deliberately absent =="
+refute "pi-dev is not installed" command -v pi
+refute "no sudo, again, under its full path" test -e /bin/sudo
+
+echo "== no setuid or setgid binaries =="
+refute "no setuid-root binaries" bash -c 'find / -xdev -perm -4000 -type f 2>/dev/null | grep .'
+refute "no setgid binaries" bash -c 'find / -xdev -perm -2000 -type f 2>/dev/null | grep .'
 
 echo "== agent configuration =="
 check "copilot lsp-config.json" test -f "${HOME}/.copilot/lsp-config.json"
@@ -117,6 +138,12 @@ check "ENABLE_LSP_TOOL=1" test "${ENABLE_LSP_TOOL:-}" = 1
 check "herdr config" test -f "${HOME}/.config/herdr/config.toml"
 check "herdr onboarding disabled" grep -q 'onboarding = false' "${HOME}/.config/herdr/config.toml"
 check "otel collector config" test -f /etc/otelcol-contrib/config.yaml
+check "otel connection string is resolved at runtime, not baked in" \
+    grep -q '${env:APPLICATIONINSIGHTS_CONNECTION_STRING}' /etc/otelcol-contrib/config.yaml
+refute "no connection string literal in the config" \
+    grep -qi 'InstrumentationKey=' /etc/otelcol-contrib/config.yaml
+check "superfile config wires up the installed previewers" \
+    grep -qx 'code_previewer = "bat"' "${HOME}/.config/superfile/config.toml"
 refute "otel collector is not running" bash -c 'pgrep -x otelcol-contrib'
 
 echo "== telemetry defaults =="

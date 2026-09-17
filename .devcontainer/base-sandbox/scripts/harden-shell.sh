@@ -1,5 +1,10 @@
 # shellcheck shell=sh
-# Sourced by every shell in the container - do not add anything slow here.
+# Sourced by every BASH shell in the container - do not add anything slow here.
+#
+# NOT every shell: /bin/sh on Debian is dash, which ignores BASH_ENV and reads
+# $ENV only when interactive, so a bare 'sh -c' is not covered. remoteEnv in
+# devcontainer.json is what covers that case, by never setting the variables in
+# the first place; this file is defence in depth behind it.
 #
 # VS Code injects these into the terminals and tasks it starts. Each is a
 # handle on something outside the container: the host SSH agent, the host GPG

@@ -1,6 +1,6 @@
 {
 	"id": "base-sandbox-template",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"name": "Base Sandbox Dev Container",
 	"description": "Hardened Debian trixie dev container for coding agents: node 24, OS Python/pip/pipx, uv, github-cli, copilot-cli, claude-code, az-cli, otel-collector, speckit, superfile and herdr - baked into a pre-built image without Dev Container Features. No sudo, no SSH host keys in the image, no host sockets or credentials passed in.",
 	"documentationURL": "https://github.com/bugrasan/devcontainer-base-ai/tree/main/src/base-sandbox-template",

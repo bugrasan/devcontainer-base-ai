@@ -29,8 +29,10 @@ LABEL org.opencontainers.image.source="https://github.com/bugrasan/devcontainer-
       org.opencontainers.image.title="base-sandbox" \
       org.opencontainers.image.description="Hardened Debian trixie AI/ML dev container image, built without Dev Container Features."
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8
+# ARG, not ENV: this is a build-time concern and has no business in the
+# environment of every process the container later runs.
+ARG DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
 
 # --- OS packages ------------------------------------------------------------
 # The union of both Dockerfile.trixie variants plus what the 'common-utils'
@@ -165,6 +167,19 @@ RUN --mount=type=secret,id=github_token \
 RUN /usr/local/share/base-sandbox/install-claude.sh "${USERNAME}" "${CLAUDE_CODE_VERSION}"
 RUN /usr/local/share/base-sandbox/install-agent-config.sh "${USERNAME}"
 
+# Every setuid-root binary Debian ships - su, mount, passwd, chsh, chfn,
+# gpasswd, newgrp - is a standing offer of a privilege transition. Nothing here
+# needs one: the user cannot become root and never has to change a password or
+# mount anything. --security-opt=no-new-privileges neutralises them too, but
+# that lives in the TEMPLATE's runArgs, so without this the image's own promise
+# would depend on how someone chose to run it.
+#
+# Last, after every installer, so a binary added by one of them is caught too.
+# The build's own 'su - vscode' calls are unaffected: the setuid bit only
+# matters for a non-root caller, and those all run as root.
+RUN find / -xdev -perm -4000 -type f -exec chmod u-s {} + 2>/dev/null || true \
+    && find / -xdev -perm -2000 -type f -exec chmod g-s {} + 2>/dev/null || true
+
 # --- shell hardening --------------------------------------------------------
 # Three mechanisms, because no single one covers every shape of shell:
 #   /etc/profile.d/   login shells, interactive or not ('su -', 'bash -lc')
@@ -172,15 +187,18 @@ RUN /usr/local/share/base-sandbox/install-agent-config.sh "${USERNAME}"
 #                     not interactive' guard, which would otherwise skip it
 #   BASH_ENV (below)  a bare 'bash -c', which reads neither of the above and is
 #                     exactly how a coding agent runs a command
+#   ~/.zshenv         non-interactive zsh, which reads neither the rc nor BASH_ENV
+# /bin/sh is dash and reads none of these when non-interactive - see
+# docs/hardening.md for why remoteEnv, not this file, is the control that counts.
 RUN ln -sf /usr/local/share/base-sandbox/harden-shell.sh /etc/profile.d/00-base-sandbox-harden.sh \
-    && for rc in /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc /etc/bash.bashrc; do \
+    && for rc in /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc /home/${USERNAME}/.zshenv /etc/bash.bashrc; do \
            [ -f "${rc}" ] || : > "${rc}"; \
            printf '%s\n%s\n' \
                '# Added by the base-sandbox image build - keep this first.' \
                '[ -r /usr/local/share/base-sandbox/harden-shell.sh ] && . /usr/local/share/base-sandbox/harden-shell.sh' \
                | cat - "${rc}" > "${rc}.new" && mv "${rc}.new" "${rc}"; \
        done \
-    && chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc
+    && chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc /home/${USERNAME}/.zshenv
 
 # --- runtime configuration --------------------------------------------------
 ENV BASH_ENV=/usr/local/share/base-sandbox/harden-shell.sh \
@@ -198,6 +216,9 @@ ENV BASH_ENV=/usr/local/share/base-sandbox/harden-shell.sh \
     CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 \
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 
+# Informational only, and fixed at the default: SSHD_PORT is read at container
+# start, so a template that changes it does not change this line. Docker does
+# not publish EXPOSEd ports by itself, so nothing depends on it being right.
 EXPOSE 2222
 
 # Set explicitly rather than relying on the daemon deriving it from the passwd

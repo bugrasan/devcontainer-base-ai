@@ -66,13 +66,18 @@ resolve_latest_tag() {
         }
     fi
 
-    tag="$(curl -fsSL --retry 3 --connect-timeout 10 --max-time 30 -o /dev/null \
+    # A repo with no releases redirects to /releases, which the sed leaves as a
+    # URL - so require something tag-shaped rather than merely "changed".
+    tag="$(curl -fsSLI --retry 3 --connect-timeout 10 --max-time 30 -o /dev/null \
         -w '%{url_effective}' "https://github.com/${repo}/releases/latest" 2>/dev/null |
         sed -E 's|.*/tag/||' || true)"
-    [ -n "${tag}" ] && [ "${tag}" != "https://github.com/${repo}/releases/latest" ] && {
-        echo "${tag}"
-        return 0
-    }
+    case "${tag}" in
+        '' | */*) ;;
+        *)
+            echo "${tag}"
+            return 0
+            ;;
+    esac
 
     tag="$(curl -fsSL --retry 3 --connect-timeout 10 --max-time 30 \
         -H "Accept: application/vnd.github+json" \
@@ -128,13 +133,25 @@ as_user() {
 # differently on purpose - whoever reads the log needs to tell them apart.
 verify_from_checksums_file() {
     local file="${1:?file required}" asset="${2:?asset name required}" url="${3:?checksums url required}"
-    local sums expected
+    local sums expected code
     sums="$(mktemp)"
-    if ! curl -fsSL --retry 3 --connect-timeout 10 --max-time 60 -o "${sums}" "${url}" 2>/dev/null; then
-        warn "checksums file ${url} was unreachable - ${asset} installed UNVERIFIED (network failure, not a missing upstream checksum)."
-        rm -f "${sums}"
-        return 0
-    fi
+    # 'curl -f' collapses every HTTP >= 400 into one exit status, which would make
+    # a renamed or wrong checksums URL - the realistic failure, since these names
+    # change between releases - indistinguishable from a network blip. Branch on
+    # the status code instead: a 4xx/5xx is our bug and must fail the build.
+    code="$(curl -sSL --retry 3 --connect-timeout 10 --max-time 60 -o "${sums}" -w '%{http_code}' "${url}" 2>/dev/null || echo 000)"
+    case "${code}" in
+        2*) ;;
+        000)
+            warn "checksums file ${url} was unreachable - ${asset} installed UNVERIFIED (network failure, not a missing upstream checksum)."
+            rm -f "${sums}"
+            return 0
+            ;;
+        *)
+            rm -f "${sums}"
+            die "checksums file ${url} returned HTTP ${code} - the asset name or URL is wrong, so ${asset} cannot be verified."
+            ;;
+    esac
     expected="$(awk -v a="${asset}" '$2 == a || $2 == "*" a { print $1; exit }' "${sums}")"
     rm -f "${sums}"
     if [ -z "${expected}" ]; then

@@ -40,8 +40,21 @@ if [ "$(id -u)" -eq 0 ]; then
         log "generating host keys in /etc/ssh"
         ssh-keygen -A
     fi
+    # The same restrictions as the unprivileged path below. Without these the
+    # root path would run Debian's defaults - password authentication on, PAM on -
+    # which is a weaker server than the one this image documents.
     mkdir -p /etc/ssh/sshd_config.d
-    printf 'Port %s\n' "${SSHD_PORT}" > /etc/ssh/sshd_config.d/10-base-sandbox.conf
+    cat > /etc/ssh/sshd_config.d/10-base-sandbox.conf <<CONFIG_EOF
+Port ${SSHD_PORT}
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+AllowAgentForwarding no
+X11Forwarding no
+PrintMotd no
+CONFIG_EOF
+    chmod 0644 /etc/ssh/sshd_config.d/10-base-sandbox.conf
     if pgrep -x sshd > /dev/null 2>&1; then
         log "sshd is already running."
         exit 0
@@ -130,8 +143,20 @@ if ! "${SSHD_BIN}" -t -f "${CONFIG}"; then
     exit 0
 fi
 
-if "${SSHD_BIN}" -f "${CONFIG}"; then
+if ! "${SSHD_BIN}" -f "${CONFIG}"; then
+    warn "sshd failed to start; run '${SSHD_BIN} -Ddf ${CONFIG}' to see why."
+    exit 0
+fi
+
+# sshd daemonises: it forks and binds after the parent has already returned 0,
+# so waiting for the PID file is the only way to report the truth here - and it
+# is what stops a caller racing the listener.
+for _ in $(seq 1 50); do
+    [ -s "${PIDFILE}" ] && break
+    sleep 0.1
+done
+if [ -s "${PIDFILE}" ]; then
     log "sshd listening on port ${SSHD_PORT} as $(id -un)."
 else
-    warn "sshd failed to start; run '${SSHD_BIN} -Ddf ${CONFIG}' to see why."
+    warn "sshd was started but wrote no PID file; run '${SSHD_BIN} -Ddf ${CONFIG}' to see why."
 fi

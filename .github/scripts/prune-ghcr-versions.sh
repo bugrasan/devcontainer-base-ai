@@ -64,6 +64,14 @@ echo "    ${total} version(s) found"
 # children of every tag that survives this run and protect them explicitly.
 echo "==> resolving the children of the tags that stay"
 kept_tags="$("${SELECT}" --mode kept-tags "${KEEP}" "${PROTECTED_TAGS}" "" < "${versions}")"
+# Fail closed. An empty kept-tags list means either "nothing is published yet"
+# or "the tag format changed and the pattern no longer matches" - and the second
+# would delete the entire retained history in one run.
+if [ -z "${kept_tags}" ] && [ "${total}" -gt 0 ]; then
+    echo "::warning::no version of ${PACKAGE} matches the release tag pattern - refusing to prune. Check that the workflow's tag format still matches select-prunable-versions.sh."
+    exit 0
+fi
+
 protected_digests=""
 for tag in ${PROTECTED_TAGS} ${kept_tags}; do
     # A tag that does not exist yet is normal on a first run.
@@ -73,7 +81,10 @@ for tag in ${PROTECTED_TAGS} ${kept_tags}; do
         echo "::warning::could not inspect ${IMAGE}:${tag} - skipping retention rather than risking its children."
         exit 0
     fi
-    [ -n "${children}" ] && protected_digests="${protected_digests} ${children}"
+    # imagetools prints one digest per line; the selector takes a single
+    # whitespace-separated argument, so normalise here rather than relying on
+    # the consumer to split on newlines.
+    [ -n "${children}" ] && protected_digests="${protected_digests} $(echo "${children}" | tr "\n" " ")"
 done
 echo "    protecting $(echo "${protected_digests}" | wc -w) child manifest(s)"
 

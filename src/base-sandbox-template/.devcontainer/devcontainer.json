@@ -28,7 +28,12 @@
 		// user, so the folder is bind-mounted from the host instead.
 		"worktrees": "mkdir -p \"${localWorkspaceFolder}.worktrees\"",
 		// 'runArgs' below passes --env-file, which fails if the file is missing.
-		"env-file": "touch \"${localWorkspaceFolder}/.env\""
+		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
+		// Fail here rather than later, silently. Docker creates a DIRECTORY at a
+		// missing bind-mount source, so without this check the container starts
+		// with a directory where its authorized_keys should come from, and SSH
+		// just never works.
+		"ssh-pubkey": "test -f \"${localEnv:HOME}/.ssh/id_ed25519.pub\" || { echo 'base-sandbox: ~/.ssh/id_ed25519.pub is missing on the host. Create one with: ssh-keygen -t ed25519' >&2; exit 1; }"
 	},
 
 	"mounts": [

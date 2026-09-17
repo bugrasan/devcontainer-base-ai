@@ -63,16 +63,26 @@ times because no single mechanism covers every shape of shell:
 | `/etc/profile.d/00-base-sandbox-harden.sh` | login shells, interactive or not (`su -`, `bash -lc`) |
 | first line of `~/.bashrc` and `~/.zshrc` | interactive shells — placed **before** Debian's "return if not interactive" guard, which would otherwise skip it |
 | `BASH_ENV=/usr/local/share/base-sandbox/harden-shell.sh` | a bare `bash -c`, which reads neither of the above and is exactly how a coding agent runs a command |
+| `~/.zshenv` | non-interactive `zsh`, which reads neither its rc file nor `BASH_ENV` |
 
-This is defence in depth, not the primary control: `remoteEnv` means the
-variables are usually never set in the first place.
+**`/bin/sh` is not covered.** On Debian that is dash, which ignores `BASH_ENV`
+and reads `$ENV` only when interactive, so a bare `sh -c` — which is also how
+the Dev Containers CLI runs string-form lifecycle commands — sees whatever the
+environment holds. There is no rc-file mechanism for it.
+
+That gap is survivable because this is defence in depth, not the primary
+control: `remoteEnv` means the variables are usually never set in the first
+place. The shell wiring exists for the case where something re-introduces one.
 
 ### Sockets
 
 Clearing a variable does not delete the socket it pointed at. `postStartCommand`
 runs `harden-runtime.sh`, which deletes them and then keeps sweeping every 30
-seconds for five minutes, because they are not all created at once — some
-appear only once the IDE has finished attaching:
+seconds for as long as the container runs. It does not stop, because these are
+not created once: some appear only after the IDE finishes attaching, and VS Code
+recreates them on every window reload or reconnect — a sweep with an expiry date
+would be a control with an expiry date. Set `HARDEN_SWEEP_PASSES` to a positive
+number for a time-boxed sweep instead.
 
 ```
 /tmp/vscode-ssh-auth-*.sock
@@ -99,8 +109,9 @@ the container can `ssh` out as you.
 ### What this costs
 
 The `code` CLI stops working inside the container — that is the IPC socket
-doing its job. Git over HTTPS prompts instead of using a host helper; use a
-token in `.env`, or `gh auth login`.
+doing its job, and the sweep keeps it that way for the life of the container.
+Git over HTTPS prompts instead of using a host helper; use a token in `.env`,
+or `gh auth login`.
 
 ---
 
@@ -111,6 +122,12 @@ token in `.env`, or `gh auth login`.
 The image never installs `sudo`, and `vscode` is in no admin group. This is the
 single largest difference from the `base-ai` image, and it is deliberate:
 every other control in this document assumes the user cannot simply undo it.
+
+The image also strips every setuid and setgid bit Debian ships (`su`, `mount`,
+`passwd`, `chsh`, `chfn`, `gpasswd`, `newgrp`). `no-new-privileges` would
+neutralise them anyway, but that flag lives in the **template's** `runArgs` — so
+without the strip, the image's own promise would depend on how someone chose to
+run it. `smoke.sh` asserts none are left.
 
 Consequences, and the way round each:
 
@@ -292,6 +309,10 @@ Being clear about the gaps matters more than the list of controls:
 - **the network** is unrestricted until layer 4 exists
 - **`.env`** is passed into the container, so every secret in it is readable by
   anything running there. Put only what the container needs in it
+- **`az`, `specify` and `claude`** live in the user's own `~/.local/bin` (their
+  installers insist on it) and are only symlinked into `/usr/local/bin`. Unlike
+  every other tool here, the sandboxed user can replace those three binaries
+- **`sh -c`** does not get the shell hardening, as above
 - **`chat.tools.global.autoApprove`** is on in the template. That is a
   deliberate trade: it is defensible *because* of the layers above, and should
   be turned off if you weaken them

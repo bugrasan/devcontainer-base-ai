@@ -90,7 +90,19 @@ check "no second sshd started" bash -c \
     "[ \"\$(cat '${HOME}/.ssh/sshd.pid')\" = '${pid_before}' ]"
 
 echo "== START_SSHD=false is honoured =="
-check "opt-out exits cleanly without starting sshd" bash -c "START_SSHD=false ${INIT}"
+optout="$(START_SSHD=false "${INIT}" 2>&1)"
+optout_status=$?
+check "opt-out exits cleanly" test "${optout_status}" -eq 0
+if echo "${optout}" | grep -q "not starting sshd"; then
+    ok "opt-out took the no-start path"
+else
+    no "opt-out produced no 'not starting sshd' message: ${optout}"
+fi
+# It must also not have touched anything: same keys, same config, no new sshd.
+check "opt-out generated no new keys" bash -c \
+    "[ \"\$(sha256sum '${KEYDIR}/ssh_host_ed25519_key' | awk '{print \$1}')\" = '${before}' ]"
+check "opt-out started no second sshd" bash -c \
+    "[ \"\$(cat '${HOME}/.ssh/sshd.pid')\" = '${pid_before}' ]"
 
 echo
 printf '%d passed, %d failed\n' "${pass}" "${fail}"
