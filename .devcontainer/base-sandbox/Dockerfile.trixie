@@ -1,0 +1,215 @@
+# syntax=docker/dockerfile:1
+#
+# base-sandbox - the same stack as the :base image, built without Dev Container
+# Features. Every tool is a plain RUN layer here, so the image builds with
+# 'docker build' alone and carries no Feature metadata.
+#
+# What is deliberately different from :base:
+#   - no sudo at all; the 'vscode' user cannot become root
+#   - no SSH host keys in the image; they are generated on first start
+#   - Node.js from the upstream tarball, not the 'node' Feature
+#   - Python, pip and pipx from the OS, not the 'python' Feature
+#   - no copilot-cli per-start auto-update check
+#   - no pi-dev
+#
+# Build (BASE_IMAGE lets a mirror stand in for a blocked registry):
+#   docker build -f Dockerfile.trixie -t base-sandbox .
+
+ARG BASE_IMAGE=debian:trixie
+FROM ${BASE_IMAGE}
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+ARG NODE_MAJOR=24
+ARG NPM_GLOBAL_PACKAGES="editorconfig eslint typescript pyright typescript-language-server"
+ARG CLAUDE_CODE_VERSION=latest
+
+LABEL org.opencontainers.image.source="https://github.com/bugrasan/devcontainer-base-ai" \
+      org.opencontainers.image.title="base-sandbox" \
+      org.opencontainers.image.description="Hardened Debian trixie AI/ML dev container image, built without Dev Container Features."
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8
+
+# --- OS packages ------------------------------------------------------------
+# The union of both Dockerfile.trixie variants plus what the 'common-utils'
+# Feature used to supply (git, openssh-client, less, procps, ...).
+#
+# NOT installed, on purpose:
+#   sudo      - the sandboxed user must not be able to become root
+#   semgrep   - not packaged for Debian trixie
+#   watchexec - not packaged for Debian trixie
+# exiftool ships as libimage-exiftool-perl in Debian and provides /usr/bin/exiftool.
+#
+# The host keys openssh-server's postinst generates are removed IN THIS SAME
+# LAYER. Deleting them in a later layer would leave them readable in the lower
+# layer, and a published image's private host key is a published private key.
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get install -y --no-install-recommends \
+        bat \
+        bats \
+        bats-assert \
+        bats-file \
+        ca-certificates \
+        curl \
+        eza \
+        fastfetch \
+        fd-find \
+        file \
+        fzf \
+        git \
+        git-delta \
+        gnupg2 \
+        iproute2 \
+        jq \
+        just \
+        lazygit \
+        less \
+        libimage-exiftool-perl \
+        mc \
+        nano \
+        openssh-client \
+        openssh-server \
+        pass \
+        pipx \
+        poppler-utils \
+        procps \
+        psmisc \
+        python3 \
+        python3-pip \
+        python3-venv \
+        ripgrep \
+        rsync \
+        shellcheck \
+        unzip \
+        vim \
+        vim-doc \
+        vim-scripts \
+        wget \
+        xh \
+        xz-utils \
+        zip \
+        zsh \
+    && rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub \
+    && ln -sf /usr/bin/batcat /usr/local/bin/bat \
+    && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
+
+# --- user -------------------------------------------------------------------
+# No sudo group and no sudoers drop-in: there is no path from this user to root.
+# Anything that needs root has to happen at build time, above this line.
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} \
+    && mkdir -p /home/${USERNAME}/.vscode-server/data/User \
+                /home/${USERNAME}/.local/bin \
+                /home/${USERNAME}/.npm-global \
+                /home/${USERNAME}/.cache \
+                /home/${USERNAME}/.config \
+                /home/${USERNAME}/.ssh \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME} \
+    && chmod 700 /home/${USERNAME}/.ssh
+
+# PATH has to be right in two places that do not share a mechanism: ENV covers
+# non-login shells (docker exec, 'bash -c', the agents), and /etc/profile.d
+# covers login shells, whose PATH 'su -' resets from /etc/login.defs.
+ENV PATH="/usr/local/node/bin:/home/${USERNAME}/.npm-global/bin:/home/${USERNAME}/.local/bin:${PATH}"
+RUN printf '%s\n' \
+        '# Added by the base-sandbox image build.' \
+        'case ":${PATH}:" in' \
+        '    *:/usr/local/node/bin:*) ;;' \
+        '    *) PATH="/usr/local/node/bin:${PATH}" ;;' \
+        'esac' \
+        'for d in "${HOME}/.npm-global/bin" "${HOME}/.local/bin"; do' \
+        '    case ":${PATH}:" in' \
+        '        *":${d}:"*) ;;' \
+        '        *) [ -d "${d}" ] && PATH="${d}:${PATH}" ;;' \
+        '    esac' \
+        'done' \
+        'export PATH' \
+        > /etc/profile.d/10-base-sandbox-path.sh \
+    && chmod 0644 /etc/profile.d/10-base-sandbox-path.sh
+
+COPY --chmod=0755 scripts/ /usr/local/share/base-sandbox/
+
+# --- Node.js ----------------------------------------------------------------
+RUN /usr/local/share/base-sandbox/install-node.sh "${NODE_MAJOR}"
+
+# 'npm install -g' as the sandboxed user must work without root, so point their
+# npm prefix at a directory they own. The packages baked in below still go to
+# the root-owned prefix, where the user can read but not modify them.
+RUN printf 'prefix=/home/%s/.npm-global\n' "${USERNAME}" > /home/${USERNAME}/.npmrc \
+    && chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.npmrc
+
+# --- CLI tools from release tarballs ---------------------------------------
+# github-cli, otel-collector-contrib, superfile and herdr. The GitHub token is
+# a BuildKit secret, not a build arg: a build arg stays readable in the image
+# history. It only raises the api.github.com rate limit - the build works
+# without it, via the /releases/latest redirect.
+RUN --mount=type=secret,id=github_token \
+    /usr/local/share/base-sandbox/install-cli-tools.sh "${USERNAME}"
+
+# --- global npm packages ----------------------------------------------------
+# Also the two language-server binaries the LSP wiring below needs on PATH.
+RUN /usr/local/share/base-sandbox/install-npm-globals.sh "${NPM_GLOBAL_PACKAGES}"
+
+# --- user tools: uv, spec-kit, azure-cli ------------------------------------
+RUN --mount=type=secret,id=github_token \
+    /usr/local/share/base-sandbox/install-user-tools.sh "${USERNAME}"
+
+# --- agent CLIs (most volatile - keep last) ---------------------------------
+RUN --mount=type=secret,id=github_token \
+    /usr/local/share/base-sandbox/install-copilot.sh
+RUN /usr/local/share/base-sandbox/install-claude.sh "${USERNAME}" "${CLAUDE_CODE_VERSION}"
+RUN /usr/local/share/base-sandbox/install-agent-config.sh "${USERNAME}"
+
+# --- shell hardening --------------------------------------------------------
+# Three mechanisms, because no single one covers every shape of shell:
+#   /etc/profile.d/   login shells, interactive or not ('su -', 'bash -lc')
+#   top of the rc     interactive shells - placed BEFORE Debian's 'return if
+#                     not interactive' guard, which would otherwise skip it
+#   BASH_ENV (below)  a bare 'bash -c', which reads neither of the above and is
+#                     exactly how a coding agent runs a command
+RUN ln -sf /usr/local/share/base-sandbox/harden-shell.sh /etc/profile.d/00-base-sandbox-harden.sh \
+    && for rc in /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc /etc/bash.bashrc; do \
+           [ -f "${rc}" ] || : > "${rc}"; \
+           printf '%s\n%s\n' \
+               '# Added by the base-sandbox image build - keep this first.' \
+               '[ -r /usr/local/share/base-sandbox/harden-shell.sh ] && . /usr/local/share/base-sandbox/harden-shell.sh' \
+               | cat - "${rc}" > "${rc}.new" && mv "${rc}.new" "${rc}"; \
+       done \
+    && chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.bashrc /home/${USERNAME}/.zshrc
+
+# --- runtime configuration --------------------------------------------------
+ENV BASH_ENV=/usr/local/share/base-sandbox/harden-shell.sh \
+    ENABLE_LSP_TOOL=1 \
+    SSHD_PORT=2222 \
+    START_SSHD=true \
+    EDITOR=vim \
+    GH_TELEMETRY=false \
+    DO_NOT_TRACK=true \
+    AZURE_CORE_COLLECT_TELEMETRY=0 \
+    DISABLE_TELEMETRY=1 \
+    DISABLE_ERROR_REPORTING=1 \
+    DISABLE_BUG_COMMAND=1 \
+    DISABLE_FEEDBACK_COMMAND=1 \
+    CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 \
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+
+EXPOSE 2222
+
+# Set explicitly rather than relying on the daemon deriving it from the passwd
+# entry: every runtime script resolves its paths from HOME, and a 'docker run
+# --user' that bypasses the passwd lookup would otherwise leave HOME at '/'.
+ENV HOME=/home/${USERNAME}
+
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}
+
+# Plain 'docker run' comes through the entrypoint, which starts sshd first. A
+# dev container does not: the Dev Containers CLI replaces the entrypoint, so
+# the template calls the same script from postStartCommand.
+ENTRYPOINT ["/usr/local/share/base-sandbox/entrypoint.sh"]
+CMD ["bash"]
