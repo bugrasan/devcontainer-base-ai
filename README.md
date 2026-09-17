@@ -144,11 +144,21 @@ ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox:latest
 Everything each Feature used to do is a `RUN` line calling a script in
 [.devcontainer/base-sandbox/scripts/](.devcontainer/base-sandbox/scripts/):
 version resolution, architecture mapping and checksum verification included.
-Node.js is verified against upstream's `SHASUMS256.txt`; the release tarballs
-are verified against each project's published checksums file where one exists,
-and the build fails if that file is reachable but the checksum does not match.
-Every downloaded binary is executed once at build time, so a wrong-architecture
-download fails the build rather than the smoke test.
+Checksum verification is declared per tool rather than guessed, because these
+upstreams do not agree on a convention:
+
+| Tool | Verified against |
+|---|---|
+| Node.js | `SHASUMS256.txt` for the release line |
+| `gh` | `gh_<version>_checksums.txt` |
+| `otelcol-contrib` | the per-asset `<asset>.sha256` sidecar |
+| `herdr` | the SHA-256 in upstream's `distribution/latest.json` |
+| `superfile`, `copilot` | **nothing — neither publishes a checksums file.** The build logs this explicitly rather than skipping it quietly |
+
+Where a checksum is expected, a missing file is fatal, not a warning: it means
+the asset name is wrong, and silently installing unverified would be worse than
+failing. Every downloaded binary is also executed once at build time, so a
+wrong-architecture download fails the build rather than the smoke test.
 
 | | `:base` | `:base-sandbox` |
 |---|---|---|

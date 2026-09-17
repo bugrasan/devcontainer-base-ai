@@ -18,8 +18,7 @@ trap 'rm -rf "${tmpdir}"' EXIT
 tag="$(resolve_latest_tag github/copilot-cli)"
 log "installing GitHub Copilot CLI ${tag} (linux/${arch})"
 download "https://github.com/github/copilot-cli/releases/download/${tag}/${asset}" "${tmpdir}/${asset}"
-verify_from_checksums_file "${tmpdir}/${asset}" "${asset}" \
-    "https://github.com/github/copilot-cli/releases/download/${tag}/checksums.txt"
+warn_unverified "${asset}" "github/copilot-cli publishes no checksums file with its releases"
 
 mkdir -p "${tmpdir}/extract"
 tar -xzf "${tmpdir}/${asset}" -C "${tmpdir}/extract"

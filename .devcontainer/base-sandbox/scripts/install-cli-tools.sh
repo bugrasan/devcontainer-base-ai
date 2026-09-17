@@ -56,8 +56,8 @@ install_otelcol() {
     log "installing otelcol-contrib ${version} (linux/${deb_arch})"
 
     download "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/${tag}/${asset}" "${tmpdir}/${asset}"
-    verify_from_checksums_file "${tmpdir}/${asset}" "${asset}" \
-        "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/${tag}/otelcol-contrib_${version}_checksums.txt"
+    verify_from_sha256_url "${tmpdir}/${asset}" \
+        "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/${tag}/${asset}.sha256"
 
     tar -xzf "${tmpdir}/${asset}" -C "${tmpdir}" otelcol-contrib
     install -m 0755 "${tmpdir}/otelcol-contrib" "${INSTALL_DIR}/otelcol-contrib"
@@ -106,8 +106,7 @@ install_superfile() {
     log "installing superfile ${version} (linux/${deb_arch})"
 
     download "https://github.com/yorukot/superfile/releases/download/${tag}/${asset}" "${tmpdir}/${asset}"
-    verify_from_checksums_file "${tmpdir}/${asset}" "${asset}" \
-        "https://github.com/yorukot/superfile/releases/download/${tag}/checksums.txt"
+    warn_unverified "${asset}" "yorukot/superfile publishes no checksums file with its releases"
 
     mkdir -p "${tmpdir}/spf"
     # The archive carries POSIX extended headers that GNU tar warns about noisily.

@@ -126,6 +126,40 @@ as_user() {
     su - "${user}" -c "$*"
 }
 
+# Verify against a single-hash sidecar - '<asset>.sha256' holding the bare digest
+# and nothing else, which is how the OpenTelemetry collector publishes them.
+# Required: a 404 here means the URL is wrong and is fatal, same as a mismatch.
+verify_from_sha256_url() {
+    local file="${1:?file required}" url="${2:?sha256 url required}" expected code sidecar
+    sidecar="$(mktemp)"
+    code="$(curl -sSL --retry 3 --connect-timeout 10 --max-time 60 -o "${sidecar}" -w '%{http_code}' "${url}" 2>/dev/null || echo 000)"
+    case "${code}" in
+        2*) ;;
+        000)
+            warn "${url} was unreachable - installed UNVERIFIED (network failure, not a missing upstream checksum)."
+            rm -f "${sidecar}"
+            return 0
+            ;;
+        *)
+            rm -f "${sidecar}"
+            die "${url} returned HTTP ${code} - the asset name or URL is wrong, so ${file} cannot be verified."
+            ;;
+    esac
+    # The file is a bare digest with no filename and no trailing newline; awk
+    # also copes with the '<sha>  <name>' form if upstream ever adds one.
+    expected="$(awk '{ print $1; exit }' "${sidecar}")"
+    rm -f "${sidecar}"
+    [ -n "${expected}" ] || die "${url} returned no digest."
+    verify_sha256 "${file}" "${expected}"
+}
+
+# For upstreams that publish no checksum at all. Say so in the log rather than
+# quietly skipping it - "unverified" and "verified" must never look the same.
+warn_unverified() {
+    local asset="${1:?asset required}" reason="${2:?reason required}"
+    warn "${asset} installed UNVERIFIED: ${reason}"
+}
+
 # Verify a download against an upstream 'sha256  filename' checksums file.
 # A mismatch is fatal; an unreachable or entry-less checksums file is only a
 # warning, because upstreams add, rename and drop these files between releases
