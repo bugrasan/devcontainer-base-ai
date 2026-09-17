@@ -1,10 +1,19 @@
 # devcontainer-base-ai
 
-Base devcontainer configuration for AI/ML development projects. Three related pieces:
+Base devcontainer configuration for AI/ML development projects, in two flavours.
+
+**`base-ai`** — the full kitchen sink, built from Dev Container Features:
 
 1. **[.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)** — one-size-fits-all dev container for *this* repo, copyable into other projects.
 2. **[src/base-ai/](src/base-ai/)** — same config packaged as a [Dev Container Template](https://containers.dev/implementors/templates/), published to GHCR (not on the public index).
 3. **[.devcontainer/base/](.devcontainer/base/)** — bakes `Dockerfile.mcr-trixie` + Features into a pre-built image, rebuilt weekly, consumed by (1) via its `image` property.
+
+**`base-sandbox`** — the same stack, hardened for coding agents and built from a single Dockerfile with **no Features**:
+
+4. **[.devcontainer/base-sandbox/](.devcontainer/base-sandbox/)** — one `Dockerfile.trixie` plus its installer scripts, rebuilt weekly, published as `:base-sandbox`.
+5. **[src/base-sandbox-template/](src/base-sandbox-template/)** — the matching Template, which consumes that image and adds the runtime hardening.
+
+No `sudo`, no SSH host keys in the image, no host sockets or credentials passed in — see **[docs/hardening.md](docs/hardening.md)**.
 
 ## Usage
 
@@ -42,10 +51,10 @@ published as an OCI artifact by
 
 > **One-time setup:** GHCR packages default to private. Make the published
 > packages public once via `github.com/users/bugrasan/packages` → package →
-> **Settings → Danger Zone → Change visibility**: the `base` image and the
-> `base-ai` template (required for anonymous pull/apply), plus the
-> `devcontainer-base-ai` collection metadata package (optional). This can't be
-> automated with the default `GITHUB_TOKEN`.
+> **Settings → Danger Zone → Change visibility**: the `base` and `base-sandbox`
+> images and the `base-ai` and `base-sandbox-template` templates (required for
+> anonymous pull/apply), plus the `devcontainer-base-ai` collection metadata
+> package (optional). This can't be automated with the default `GITHUB_TOKEN`.
 
 ## The `:base` Image
 
@@ -122,6 +131,131 @@ both already in this image. `herdr` installs the terminal multiplexer coding
 agents run in; it installs the binary only and starts nothing, so run `herdr`
 to open or reattach to a session.
 
+## The `:base-sandbox` Image
+
+[.devcontainer/base-sandbox/Dockerfile.trixie](.devcontainer/base-sandbox/Dockerfile.trixie)
+builds the same stack as `:base` without a single Dev Container Feature, so it
+builds with `docker build` alone:
+
+```
+ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox:latest
+```
+
+Everything each Feature used to do is a `RUN` line calling a script in
+[.devcontainer/base-sandbox/scripts/](.devcontainer/base-sandbox/scripts/):
+version resolution, architecture mapping and checksum verification included.
+
+| | `:base` | `:base-sandbox` |
+|---|---|---|
+| built by | Dev Containers CLI, 12 Features | `docker buildx build`, one Dockerfile |
+| base image | `mcr.microsoft.com/devcontainers/base:trixie` | `debian:trixie` |
+| `sudo` | passwordless for `vscode` | **not installed** |
+| SSH host keys | baked in by the `sshd` Feature | **generated on first start** |
+| sshd runs as | root | `vscode`, unprivileged |
+| Node.js | `node` Feature | upstream tarball, v24, checksum-verified |
+| Python / pip / pipx | `python` Feature | from the OS (Debian 3.13) |
+| `az` (Azure CLI) | not included | `uv tool install azure-cli` |
+| `pi-dev` | included | not included |
+| copilot auto-update check | disabled in `postCreateCommand` | never installed |
+| Linux capabilities | container defaults | all dropped by the template |
+
+Baked in: `node`/`npm` 24, OS `python3`/`pip`/`pipx`, `uv`, `gh`, `copilot`,
+`claude`, `az`, `specify` (spec-kit), `otelcol-contrib`, `spf` (superfile),
+`herdr`, the global npm packages (`editorconfig`, `eslint`, `typescript`,
+`pyright`, `typescript-language-server`) and the agent LSP config.
+
+### SSH host keys
+
+The image ships none, on purpose: a host key baked into a published image is the
+same key for everyone who pulls it. `/etc/ssh/ssh_host_*` is removed **in the
+same layer** that installs `openssh-server`, so it is not recoverable from a
+lower layer either.
+
+`/usr/local/share/base-sandbox/sshd-init.sh` generates an ed25519 and an RSA key
+on first start and then starts sshd **as the `vscode` user** on port 2222 — no
+root and no capabilities are involved, because sshd only ever authenticates the
+account it already runs as. It is idempotent, and it runs from two places: the
+image `ENTRYPOINT` for plain `docker run`, and `postStartCommand` for dev
+containers, whose CLI replaces the entrypoint.
+
+### Publishing and retention
+
+[.github/workflows/publish-base-sandbox-image.yml](.github/workflows/publish-base-sandbox-image.yml)
+builds both architectures natively and publishes on pushes touching
+`.devcontainer/base-sandbox/**`, and on a schedule (Saturdays 07:24 UTC — 30
+minutes after the `:base` build, so the two do not compete for runners).
+Scheduled runs build with `--no-cache`, since a cached `apt-get upgrade` would
+replay the previous week's packages.
+
+Every build publishes two tags: the floating `:latest` and an immutable
+`:YYYYMMDD-<short-sha>`. After a successful smoke test,
+[.github/scripts/prune-ghcr-versions.sh](.github/scripts/prune-ghcr-versions.sh)
+keeps the current dated release plus the two before it and deletes the rest,
+including the untagged per-architecture manifests the dropped ones leave behind.
+`:latest`, `:latest-linux-*` and `:buildcache-*`, and the children of everything
+kept, are never touched.
+
+> A repository `GITHUB_TOKEN` can list versions of a **user-owned** package but
+> is usually refused on DELETE. Add a `GHCR_PAT` repository secret (a personal
+> access token with `delete:packages`) to enable retention. Without it the step
+> logs the remedy as a warning and exits cleanly — it never fails a run whose
+> image is already published.
+
+## Dev Container Template: `base-sandbox-template`
+
+[src/base-sandbox-template/](src/base-sandbox-template/) consumes the image
+above and adds the parts that only exist at container run time: the cleared
+environment, the socket sweep, and the dropped capabilities.
+
+- **Template reference:** `ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox-template`
+- **Options:** `sshdPort` (default `2222`) and `startSshd` (default `true`). Both
+  are read at container start, so changing either needs a restart, not an image
+  rebuild — unlike the `sshd` Feature, which reads them only at image-build time.
+
+```bash
+devcontainer templates apply -w /path/to/project \
+  -t ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox-template:0
+```
+
+The name carries the `-template` suffix because templates and images share one
+GHCR namespace: `base-sandbox` is already taken by the image.
+
+## Hardening
+
+Four layers, two of them on. The full rationale, what each costs and how to
+enable the other two is in **[docs/hardening.md](docs/hardening.md)**.
+
+| Layer | Status |
+|---|---|
+| 1 — no handles back to the host (cleared env, swept sockets, no copied credentials) | enabled |
+| 2 — no privilege to take (no `sudo`, `--cap-drop=ALL`, `--security-opt=no-new-privileges`) | enabled |
+| 3 — Docker socket proxy | documented, off (needs Compose) |
+| 4 — outbound egress allowlist | documented, off (needs `NET_ADMIN`/`NET_RAW` back) |
+
+Based on Daniel Demmel's
+[Coding agents in secured VS Code dev containers](https://www.danieldemmel.me/blog/coding-agents-in-secured-vscode-dev-containers).
+
+Known costs: `ping` needs `NET_RAW` and stops working, the `code` CLI inside the
+container stops working (its IPC socket is the one that executes commands on the
+host), and `apt-get install` needs an image rebuild. Use `uv`, `pipx` or
+`npm -g` — all three work without root.
+
+## Tests
+
+```bash
+npm install -g bats @devcontainers/cli jsonc-parser
+bats test/unit                      # host-side: retention logic, template configs
+```
+
+| Location | Runs | Covers |
+|---|---|---|
+| [test/unit/](test/unit/) | on the host, no Docker needed for most | GHCR retention selection, JSONC validity of every `devcontainer.json`, the template's hardening settings |
+| [test/container/](test/container/) | inside the built image, in CI | every tool present, no `sudo`, no baked host keys, key generation, a real public-key login |
+
+The container tests run in CI under the same `--cap-drop=ALL
+--security-opt=no-new-privileges` the template applies, so they prove the image
+works *when sandboxed*.
+
 ## LSP code intelligence
 
 The image is wired so the three baked-in AI agent harnesses use **Language
@@ -190,7 +324,12 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 | Cherry-pick a commit | `git cherry-pick <hash>` |
 | Interactive partial apply | `git checkout -p devcontainer-upstream/main -- .devcontainer/devcontainer.json` |
 | Apply the `base-ai` Template | `devcontainer templates apply -w <dir> -t ghcr.io/bugrasan/devcontainer-base-ai/base-ai:0` |
+| Apply the `base-sandbox` Template | `devcontainer templates apply -w <dir> -t ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox-template:0` |
 | Pull the `:base` image | `docker pull ghcr.io/bugrasan/devcontainer-base-ai/base:latest` |
+| Pull the `:base-sandbox` image | `docker pull ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox:latest` |
+| Build `:base-sandbox` locally | `docker build -f .devcontainer/base-sandbox/Dockerfile.trixie -t base-sandbox .devcontainer/base-sandbox` |
+| SSH into a `base-sandbox` container | `ssh -p 2222 vscode@localhost` |
+| Run the host-side tests | `bats test/unit` |
 
 ## Repository Layout
 
@@ -198,15 +337,27 @@ docker run --rm -it -v "$(pwd):/workspace" -w /workspace trixie-dev
 .
 ├── .devcontainer/
 │   ├── devcontainer.json          # dev container for THIS repo (uses the :base image)
-│   └── base/
-│       ├── devcontainer.json      # build-only definition published by publish-base-image.yml
-│       ├── Dockerfile.mcr-trixie  # source Dockerfile actually baked into the :base image
-│       ├── Dockerfile.trixie      # unused by :base - see "Alternative: Plain Docker" below
-│       └── features/npm-packages/ # local Feature: editorconfig, eslint, typescript, pyright, typescript-language-server
-├── src/base-ai/                # published by publish-templates.yml
-├── .github/workflows/
-│   ├── publish-templates.yml
-│   └── publish-base-image.yml
+│   ├── base/
+│   │   ├── devcontainer.json      # build-only definition published by publish-base-image.yml
+│   │   ├── Dockerfile.mcr-trixie  # source Dockerfile actually baked into the :base image
+│   │   ├── Dockerfile.trixie      # unused by :base - see "Alternative: Plain Docker" below
+│   │   └── features/              # local Features: npm-packages, lsp-config
+│   └── base-sandbox/
+│       ├── Dockerfile.trixie      # the :base-sandbox image - no Features at all
+│       └── scripts/               # build-time installers + the runtime sshd/hardening scripts
+├── src/
+│   ├── base-ai/                   # published by publish-templates.yml
+│   └── base-sandbox-template/     # ditto - consumes the :base-sandbox image
+├── docs/hardening.md              # the four hardening layers, what is on and why
+├── test/
+│   ├── unit/                      # host-side: retention logic, template configs
+│   └── container/                 # run inside the built image by CI
+├── .github/
+│   ├── scripts/                   # GHCR retention
+│   └── workflows/
+│       ├── publish-templates.yml
+│       ├── publish-base-image.yml
+│       └── publish-base-sandbox-image.yml
 └── LICENSE
 ```
 

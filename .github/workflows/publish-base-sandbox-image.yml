@@ -1,0 +1,238 @@
+name: "Publish :base-sandbox Dev Container Image"
+
+# The hardened sibling of publish-base-image.yml. Same weekly cadence, offset
+# by 30 minutes so the two builds do not compete for the same hosted runners.
+# GitHub Actions schedules are UTC-only (no DST adjustment): 07:24 UTC every
+# Saturday, which is 08:24 or 09:24 Europe/Zurich depending on the season.
+#
+# Unlike the :base image this one is NOT built by the Dev Containers CLI: it is
+# a plain Dockerfile with no Features, so a plain 'docker buildx build' is all
+# it needs.
+on:
+  push:
+    branches:
+      - main
+      # Publishes the image from the feature branch too, so it can be tested
+      # before anything merges.
+      - base-sandbox
+    paths:
+      - ".devcontainer/base-sandbox/**"
+      - "test/container/**"
+      - ".github/scripts/**"
+      - ".github/workflows/publish-base-sandbox-image.yml"
+  schedule:
+    - cron: "24 7 * * 6"
+  workflow_dispatch: {}
+
+env:
+  IMAGE: ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox
+  # Current release plus the two before it.
+  KEEP_VERSIONS: 3
+
+jobs:
+  # Native per-architecture builds on GitHub's amd64 and arm64 runners - no
+  # QEMU emulation, which is both slow and a source of its own failures.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # --push uses buildkit's registry exporter: compressed layers stream
+      # straight to GHCR instead of round-tripping through the local daemon.
+      #
+      # The cache lives under its own :buildcache-<arch> tag with mode=max
+      # (every intermediate layer). A separate ref is required so it does not
+      # overwrite the published image.
+      #
+      # --no-cache on the scheduled run only: a layer's cache key is its
+      # instruction text plus its parent, not what re-running it would fetch,
+      # so a cached 'apt-get upgrade' would replay last week's package versions
+      # forever - defeating the one job this weekly cron exists for. Every
+      # other trigger keeps the cache.
+      #
+      # GITHUB_TOKEN goes in as a BuildKit secret, never a build arg: a build
+      # arg stays readable in the image history. It only raises the
+      # api.github.com rate limit when resolving 'latest' release tags.
+      - name: Build and push (${{ matrix.platform }})
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker buildx build \
+            --file .devcontainer/base-sandbox/Dockerfile.trixie \
+            --platform ${{ matrix.platform }} \
+            --tag "${IMAGE}:latest-linux-${{ matrix.arch }}" \
+            --secret id=github_token,env=GITHUB_TOKEN \
+            --cache-from "type=registry,ref=${IMAGE}:buildcache-${{ matrix.arch }}" \
+            --cache-to   "type=registry,ref=${IMAGE}:buildcache-${{ matrix.arch }},mode=max" \
+            ${{ github.event_name == 'schedule' && '--no-cache' || '' }} \
+            --push \
+            .devcontainer/base-sandbox
+
+  # imagetools works on registry manifests: it does not pull or re-push layer
+  # blobs, so this stays a few seconds regardless of image size.
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # An immutable tag per build, so "keep the current version plus two past
+      # versions" has something to count. :latest alone would be a single
+      # version that each build overwrites.
+      - name: Compute the release tag
+        id: tag
+        run: echo "release_tag=$(date -u +%Y%m%d)-${GITHUB_SHA::7}" >> "${GITHUB_OUTPUT}"
+
+      - name: Merge the platform images into multi-arch manifests
+        run: |
+          for tag in latest "${{ steps.tag.outputs.release_tag }}"; do
+            docker buildx imagetools create -t "${IMAGE}:${tag}" \
+              "${IMAGE}:latest-linux-amd64" \
+              "${IMAGE}:latest-linux-arm64"
+          done
+
+  # Verifies the published multi-arch image on both architectures.
+  smoke-test:
+    needs: manifest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the image
+        run: docker pull "${IMAGE}:latest"
+
+      # The dated tag is what retention counts, so a build that fails to
+      # publish one must not pass.
+      - name: The dated release tag resolves
+        run: |
+          docker buildx imagetools inspect \
+            "${IMAGE}:${{ needs.manifest.outputs.release_tag }}" > /dev/null
+          echo "published ${IMAGE}:${{ needs.manifest.outputs.release_tag }}"
+
+      # Under exactly the restrictions the template applies, so the test proves
+      # the image works when sandboxed rather than when unconfined.
+      #
+      # --entrypoint bash bypasses the image entrypoint on purpose: both tests
+      # assert the image ships no SSH host keys, and the entrypoint's whole job
+      # is to create them. The entrypoint gets its own test below.
+      - name: Smoke test (hardened, as the template runs it)
+        run: |
+          docker run --rm \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --entrypoint bash \
+            -v "${PWD}/test/container:/test:ro" \
+            "${IMAGE}:latest" /test/smoke.sh
+
+      - name: SSH host-key generation and login (hardened)
+        run: |
+          docker run --rm \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --entrypoint bash \
+            -v "${PWD}/test/container:/test:ro" \
+            "${IMAGE}:latest" /test/sshd.sh
+
+      # The plain 'docker run' path: the image entrypoint must bring sshd up on
+      # its own, with keys that exist nowhere in the image.
+      - name: Entrypoint starts sshd on a plain docker run
+        run: |
+          docker run --rm -d --name entrypoint-test \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            "${IMAGE}:latest" sleep 60
+          for _ in $(seq 1 20); do
+            docker exec entrypoint-test bash -lc 'ss -ltn | grep -q ":2222"' && break
+            sleep 1
+          done
+          docker exec entrypoint-test bash -lc '
+            set -e
+            ss -ltn | grep -q ":2222"
+            echo "sshd is listening on 2222"
+            test -f "${HOME}/.ssh/host_keys/ssh_host_ed25519_key"
+            echo "host keys were generated at start"
+            [ "$(id -un)" = vscode ]
+            echo "the container runs as vscode"
+          '
+          docker rm -f entrypoint-test
+
+  # Retention: keep the current release plus the two before it, and remove the
+  # untagged per-architecture manifests the dropped ones leave behind. Runs only
+  # after the smoke test passes, so a broken build never deletes a good image.
+  prune:
+    needs: [manifest, smoke-test]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # imagetools resolves the children of every multi-arch tag that survives.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # GHCR_PAT is optional: a repository GITHUB_TOKEN can list versions of a
+      # user-owned package but is usually refused on DELETE. Without it the
+      # script reports the remedy and exits 0 - it never fails a run whose
+      # image is already published.
+      - name: Prune old versions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/prune-ghcr-versions.sh \
+            bugrasan devcontainer-base-ai/base-sandbox "${KEEP_VERSIONS}"

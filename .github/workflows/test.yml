@@ -1,0 +1,42 @@
+name: "Tests"
+
+# The host-side suite: retention logic and the devcontainer configs. The image
+# tests live in publish-base-sandbox-image.yml, because they need the published
+# image.
+on:
+  push:
+    branches:
+      - main
+      - base-sandbox
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install the test tooling
+        run: npm install -g bats @devcontainers/cli jsonc-parser
+
+      - name: bats test/unit
+        run: bats test/unit
+
+      # Catches the quoting mistakes that a syntax check cannot - unquoted
+      # expansions, and the ${var:-default} braces that silently truncate.
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck --severity=warning \
+            .devcontainer/base-sandbox/scripts/*.sh \
+            .github/scripts/*.sh \
+            test/container/*.sh \
+            test/unit/render-template.sh

@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+      # Publishes from the feature branch too, so a new template can be applied
+      # and tested before anything merges. The action skips any template whose
+      # version is already published, so re-running this on a branch republishes
+      # nothing that already exists - only genuinely new versions go out.
+      - base-sandbox
     paths:
       - "src/**"
       - ".github/workflows/publish-templates.yml"
@@ -11,7 +16,7 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/base-sandbox' }}
     runs-on: ubuntu-latest
     permissions:
       # contents: write covers both the ghcr publish and pushing the
@@ -71,7 +76,11 @@ jobs:
       # happened in bugrasan/devcontainers-features at 02bf143. Describe it as
       # "the skip-CI marker" in prose instead of writing the token.
       # https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
+      # Only on main. On a feature branch the generated README is committed by
+      # hand with the rest of the change, and pushing to main from a branch
+      # build would publish docs for templates that are not on main yet.
       - name: Commit documentation updates
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
