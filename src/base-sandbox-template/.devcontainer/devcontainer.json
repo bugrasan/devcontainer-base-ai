@@ -1,0 +1,229 @@
+// base-sandbox - a hardened dev container for coding agents.
+//
+// Consumes the pre-built ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox
+// image, which bakes the whole stack in a plain Dockerfile (no Dev Container
+// Features): node 24, the OS Python/pip/pipx, uv, github-cli, copilot-cli,
+// claude-code, az-cli, otel-collector, speckit, superfile and herdr.
+//
+// The hardening here is layers 1 and 2 of four. What each layer stops, what it
+// costs, and how to switch on layers 3 and 4 is in docs/hardening.md of
+// https://github.com/bugrasan/devcontainer-base-ai.
+{
+	"name": "base-sandbox",
+
+	// Pinned to :latest on purpose - the image is rebuilt every Saturday and a
+	// sandbox wants the newest patched OS packages. Pin a dated tag
+	// (e.g. :20260919-a1b2c3d) instead if you need a reproducible build; the
+	// three most recent are kept in the registry.
+	"image": "ghcr.io/bugrasan/devcontainer-base-ai/base-sandbox:latest",
+
+	// No "features" block at all: everything is baked into the image above.
+	// Adding a Feature here still works - it just layers on top at build time.
+
+	// Runs on the HOST before the container starts.
+	// Must be a string (not an array) so it runs through /bin/sh -c.
+	"initializeCommand": {
+		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace
+		// folder. Inside the container /workspaces/ is not writable by the vscode
+		// user, so the folder is bind-mounted from the host instead.
+		"worktrees": "mkdir -p \"${localWorkspaceFolder}.worktrees\"",
+		// 'runArgs' below passes --env-file, which fails if the file is missing.
+		"env-file": "touch \"${localWorkspaceFolder}/.env\""
+	},
+
+	"mounts": [
+		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
+
+		// ONLY the public key. The private key never enters the container: sshd
+		// authenticates the incoming connection against authorized_keys, which
+		// postCreateCommand builds from this file. Mounting ~/.ssh wholesale, or
+		// forwarding the host's SSH agent, would hand every host credential to
+		// whatever runs in here.
+		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached"
+	],
+
+	// Layer 2 of the hardening. Both flags are deliberate, and both have a cost:
+	//   --cap-drop=ALL          removes every Linux capability, so a process that
+	//                           somehow reaches uid 0 still cannot chown, bind a
+	//                           privileged port, or switch user. Breaks 'ping'
+	//                           (needs NET_RAW) and in-container iptables.
+	//   --security-opt=no-new-privileges
+	//                           a setuid binary or a file capability can no longer
+	//                           raise privileges, so dropping a setuid binary into
+	//                           the workspace gains nothing.
+	// Remove a flag here if a tool you need breaks - and see docs/hardening.md.
+	"runArgs": [
+		"--env-file",
+		".env",
+		"--cap-drop=ALL",
+		"--security-opt=no-new-privileges",
+		// Auto-remove the container when it stops.
+		// https://github.com/microsoft/vscode-remote-release/issues/3512
+		"--rm"
+	],
+
+	// The image's 'vscode' user has no sudo and no path to root, so the CLI
+	// cannot re-chown the home directory on a UID mismatch - and with
+	// --cap-drop=ALL it could not chown anyway. Keep the image's 1000:1000.
+	"updateRemoteUserUID": false,
+
+	// sshd listens on this port inside the container. Unlike the sshd Feature,
+	// SSHD_PORT is read at CONTAINER START by sshd-init.sh, so changing it here
+	// takes effect on the next start - no image rebuild.
+	"forwardPorts": [
+		${templateOption:sshdPort}
+	],
+	"portsAttributes": {
+		"${templateOption:sshdPort}": {
+			"label": "SSH",
+			"onAutoForward": "notify"
+		}
+	},
+	// Alternative to 'forwardPorts': a real Docker publish, so
+	// 'ssh -p <port> vscode@localhost' works without an open VS Code session.
+	// "appPort": ["127.0.0.1:${templateOption:sshdPort}:${templateOption:sshdPort}"],
+
+	"containerEnv": {
+		"TZ": "Europe/Zurich",
+		"EDITOR": "vim",
+		"VISUAL": "code",
+
+		// Read at container start by /usr/local/share/base-sandbox/sshd-init.sh.
+		"SSHD_PORT": "${templateOption:sshdPort}",
+		"START_SSHD": "${templateOption:startSshd}",
+
+		// Claude Code's LSP tool: go-to-definition, find-references, hover and
+		// diagnostics through language servers instead of grep/read. Also set in
+		// the image; repeated here so it survives swapping the image.
+		"ENABLE_LSP_TOOL": "1",
+
+		// Telemetry opt-outs. Also set in the image - same reason.
+		"GH_TELEMETRY": "false",
+		"DO_NOT_TRACK": "true",
+		"AZURE_CORE_COLLECT_TELEMETRY": "0",
+		"DISABLE_TELEMETRY": "1",
+		"DISABLE_ERROR_REPORTING": "1",
+		"DISABLE_BUG_COMMAND": "1",
+		"DISABLE_FEEDBACK_COMMAND": "1",
+		"CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
+		"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+	},
+
+	// Layer 1 of the hardening: every handle VS Code passes into the container
+	// that reaches back out of it.
+	//   "" keeps the name but empties it; null removes it entirely.
+	// The image clears the same set again in every shell
+	// (/usr/local/share/base-sandbox/harden-shell.sh), because remoteEnv only
+	// covers the processes the IDE starts itself.
+	"remoteEnv": {
+		// the host's SSH agent - would let anything in here use the host's keys
+		// https://github.com/microsoft/vscode-remote-release/issues/11014
+		"SSH_AUTH_SOCK": "",
+		// the host's GPG agent - same problem, signing keys instead
+		"GPG_AGENT_INFO": "",
+		// opens URLs on the host
+		"BROWSER": "",
+		// executes commands in the HOST VS Code process
+		"VSCODE_IPC_HOOK_CLI": "",
+		// hands over the host's git credentials
+		"VSCODE_GIT_IPC_HANDLE": "",
+		"GIT_ASKPASS": "",
+		"VSCODE_GIT_ASKPASS_MAIN": "",
+		"VSCODE_GIT_ASKPASS_NODE": "",
+		"VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+		// dev-containers extension RPC
+		"REMOTE_CONTAINERS_IPC": "",
+		"REMOTE_CONTAINERS_SOCKETS": "",
+		"REMOTE_CONTAINERS_DISPLAY_SOCK": "",
+		// GUI forwarding
+		"WAYLAND_DISPLAY": null,
+		"DISPLAY": null
+	},
+
+	// Runs once, after the container is created. These run IN PARALLEL - never
+	// make one depend on another.
+	"postCreateCommand": {
+		// Dotfiles. Replace codeberg.org with your own host, or drop this line.
+		"chezmoi": "sh -c \"$(curl -fsLS get.chezmoi.io/lb)\" -- init --one-shot --apply codeberg.org/bugrasan/dotfiles && echo '01-chezmoi' >> ~/devcontainer-post-create.txt",
+
+		// The public half of the host key, so 'ssh -p <port> vscode@localhost'
+		// works. sshd reads this file per connection, so ordering against
+		// sshd-init.sh does not matter.
+		// https://github.com/microsoft/vscode/issues/324870
+		"authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '02-authorized-keys' >> ~/devcontainer-post-create.txt",
+
+		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '03-github-cli-telemetry' >> ~/devcontainer-post-create.txt"
+	},
+
+	// Runs on EVERY container start, including a restart of an existing one.
+	"postStartCommand": {
+		// Generates the SSH host keys on first start - the image ships none, so
+		// every container gets its own - then starts sshd as the vscode user.
+		// Idempotent: a restart reuses the same keys and does not start a second
+		// sshd. The image entrypoint runs the same script for plain 'docker run',
+		// but the Dev Containers CLI replaces that entrypoint, hence this line.
+		"sshd": "/usr/local/share/base-sandbox/sshd-init.sh",
+
+		// Deletes the VS Code sockets and helper scripts that reach back to the
+		// host, then keeps sweeping for a few minutes - some appear only once the
+		// IDE has finished attaching. This is what disables the 'code' CLI inside
+		// the container; that is the point of it.
+		"harden": "/usr/local/share/base-sandbox/harden-runtime.sh"
+	},
+
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"telemetry.telemetryLevel": "off",
+
+				// Do not copy the host's docker credentials or git config into the
+				// container - both are credentials this container has no use for.
+				"dev.containers.dockerCredentialHelper": false,
+				"dev.containers.copyGitConfig": false,
+
+				// Keep speech extensions on the local UI side.
+				"remote.extensionKind": {
+					"ms-vscode.vscode-speech": "ui",
+					"ms-vscode.vscode-speech-language-pack-de-de": "ui"
+				},
+
+				"github.copilot.chat.codeGeneration.useInstructionFiles": true,
+				"chat.useAgentsMdFile": true,
+				"chat.useAgentSkills": true,
+				"chat.useNestedAgentsMdFiles": true,
+				"chat.mcp.gallery.enabled": true,
+
+				// VS Code Copilot agent mode and its built-in 'usages' tool
+				// (#usages, since v1.99), backed by Pylance and the built-in
+				// TypeScript language features.
+				"chat.agent.enabled": true,
+
+				// Auto-approval is safe here BECAUSE of the sandbox: no sudo, no
+				// capabilities, no host sockets, no host credentials. Turn both off
+				// if you weaken the hardening above.
+				// https://code.visualstudio.com/docs/copilot/chat/chat-tools
+				"chat.tools.terminal.enableAutoApprove": true,
+				"chat.tools.global.autoApprove": true
+			},
+			"extensions": [
+				"EditorConfig.EditorConfig",
+				"albert.TabOut",
+				"mhutchie.git-graph",
+				"eamodio.gitlens",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"dbaeumer.vscode-eslint",
+				"anthropic.claude-code",
+				"ms-vscode.vscode-chat-customizations-evaluations",
+				"ms-vscode.vscode-speech",
+				"ms-vscode.vscode-speech-language-pack-de-de",
+				"mutantdino.resourcemonitor",
+				"bierner.markdown-mermaid"
+			]
+		}
+	},
+
+	"containerUser": "vscode",
+	"remoteUser": "vscode"
+}

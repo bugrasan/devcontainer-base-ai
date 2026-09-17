@@ -1,0 +1,32 @@
+{
+	"id": "base-sandbox-template",
+	"version": "0.0.1",
+	"name": "Base Sandbox Dev Container",
+	"description": "Hardened Debian trixie dev container for coding agents: node 24, OS Python/pip/pipx, uv, github-cli, copilot-cli, claude-code, az-cli, otel-collector, speckit, superfile and herdr - baked into a pre-built image without Dev Container Features. No sudo, no SSH host keys in the image, no host sockets or credentials passed in.",
+	"documentationURL": "https://github.com/bugrasan/devcontainer-base-ai/tree/main/src/base-sandbox-template",
+	"licenseURL": "https://github.com/bugrasan/devcontainer-base-ai/blob/main/LICENSE",
+	"options": {
+		"sshdPort": {
+			"type": "string",
+			"description": "Port sshd listens on inside the container. Read at container start, so it can be changed without rebuilding the image.",
+			"proposals": [
+				"2222",
+				"2223",
+				"22022"
+			],
+			"default": "2222"
+		},
+		"startSshd": {
+			"type": "string",
+			"description": "Start sshd on every container start. Set to false to leave the port closed; the host keys are then generated the first time you start it by hand.",
+			"proposals": [
+				"true",
+				"false"
+			],
+			"default": "true"
+		}
+	},
+	"platforms": [
+		"Any"
+	]
+}
