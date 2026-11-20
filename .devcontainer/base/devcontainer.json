@@ -67,10 +67,6 @@
 		// typescript-language-server); gopls stays dormant until a Go toolchain is added.
 		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
 
-		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/pi-dev
-		// installsAfter node, since it hard-requires Node.js >=22.19.0 + npm.
-		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
-
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/speckit
 		// installs the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+
 		// (the python Feature above) and uv (baked into Dockerfile.mcr-trixie), both

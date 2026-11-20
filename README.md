@@ -54,7 +54,7 @@ a build-only definition (not meant to be opened in VS Code) that builds
 [Dockerfile.mcr-trixie](.devcontainer/base/Dockerfile.mcr-trixie) plus the same
 Features as the root devcontainer.json (`common-utils`, `sshd`, `node`,
 `python`, `github-cli`, `copilot-cli`, plus the local `npm-packages` Feature
-and the published `claude-code`/`pi-dev`/`speckit`/`otel-collector-contrib`/
+and the published `claude-code`/`speckit`/`otel-collector-contrib`/
 `superfile`/`herdr` Features), baking them all into:
 
 ```
@@ -95,7 +95,7 @@ entirely. (With `autoStart` disabled, the Feature's
 `/usr/local/share/otel-collector-contrib/start.sh` helper is a no-op — run the
 binary directly as above.)
 
-### Why `pi`/`claude`/npm packages are Features, not Dockerfile `RUN` lines
+### Why `claude`/npm packages are Features, not Dockerfile `RUN` lines
 
 `devcontainer build` only builds the Dockerfile, then layers Features
 (including `node`) **on top of it** — there's no way for a plain Dockerfile
@@ -103,20 +103,19 @@ binary directly as above.)
 
 - **`uv`** doesn't need Node — it's `RUN` directly in the Dockerfile.
 - **`eslint`/`typescript`/`pyright`/`typescript-language-server`** (the local
-  [`npm-packages`](.devcontainer/base/features/npm-packages) Feature) and
-  **`pi-dev`** need `npm`, which only exists once the `node` Feature layer
-  applies — both declare `installsAfter: node` so the Feature installer runs
-  in the right order.
+  [`npm-packages`](.devcontainer/base/features/npm-packages) Feature) need
+  `npm`, which only exists once the `node` Feature layer applies — the
+  Feature declares `installsAfter: node` so the Feature installer runs in the
+  right order.
 - **`claude-code`** turns out not to need `npm` at all — confirmed by actually
   running `claude.ai/install.sh` non-interactively (no tty, no stdin): it's a
-  self-contained native binary installer. The install fails some other way
-  ("No terminal detected") for `pi.dev` specifically if Node/npm aren't
-  present yet, which is exactly what `installsAfter: node` prevents.
+  self-contained native binary installer.
 
 Published from a separate repo:
 [bugrasan/devcontainers-features](https://github.com/bugrasan/devcontainers-features)
-(`claude-code`, `pi-dev`, `speckit`, `otel-collector-contrib`, `superfile`,
-`herdr`). `speckit` installs the `specify` CLI (Spec-Driven Development) via
+(`claude-code`, `speckit`, `otel-collector-contrib`, `superfile`, `herdr`).
+`pi-dev` is no longer baked into the image; add it to your own
+devcontainer.json if you need Pi. `speckit` installs the `specify` CLI (Spec-Driven Development) via
 uv; it needs uv (from the Dockerfile) and Python (from the `python` Feature),
 both already in this image. `herdr` installs the herdr TUI (the terminal
 multiplexer coding agents run in) and herdr-core (`hc`, the headless core that

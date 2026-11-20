@@ -169,9 +169,6 @@ jobs:
             command -v claude || exit 1
             echo "✓ claude found"
             claude --version
-            command -v pi || exit 1
-            echo "✓ pi found"
-            pi --version
             command -v herdr || exit 1
             echo "✓ herdr found"
             herdr --version
