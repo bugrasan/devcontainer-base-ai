@@ -1,6 +1,6 @@
 {
 	"id": "base-ai",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"name": "Base AI Dev Container",
 	"description": "One-size-fits-all Debian trixie dev container for AI/ML development: node, python, github-cli, copilot-cli, sshd, and a curated set of CLI tools (bat, eza, fzf, ripgrep, lazygit, jq, and more).",
 	"documentationURL": "https://github.com/bugrasan/devcontainer-base-ai/tree/main/src/base-ai",
@@ -8,7 +8,7 @@
 	"options": {
 		"sshdPort": {
 			"type": "string",
-			"description": "Port to expose the sshd feature on (must match across forwardPorts, portsAttributes, and containerEnv.SSHD_PORT).",
+			"description": "Port sshd listens on inside the container; VS Code forwards it to the host.",
 			"proposals": [
 				"2222",
 				"2223",

@@ -139,7 +139,7 @@
 	// 		"label": "VNC desktop",
 	// 	}
 	// },
-	// this is for sshd - see also variables in 'containerEnv'
+	// for sshd - the 'sshd-port' postCreateCommand moves sshd to this port
 	"forwardPorts": [${templateOption:sshdPort}],
 	"portsAttributes": {
 		"${templateOption:sshdPort}": {
@@ -147,11 +147,12 @@
 			"onAutoForward": "notify"
 		}
 	},
-	// Alternative to 'forwardPorts' above: a real Docker port publish (host:container),
-	// so `ssh -p 2222 vscode@localhost` works even without an active VS Code Dev
-	// Containers session (forwardPorts is a dynamic tunnel that only exists while a
-	// session is open). Uncomment to switch to this instead.
-	// "appPort": ["127.0.0.1:2222:2222"],
+	// Alternative to 'forwardPorts' above: a real Docker port publish
+	// (host:container), so `ssh -p ${templateOption:sshdPort} vscode@localhost`
+	// works even without an active VS Code Dev Containers session (forwardPorts
+	// is a dynamic tunnel that only exists while a session is open). Uncomment
+	// to switch to this instead.
+	// "appPort": ["127.0.0.1:${templateOption:sshdPort}:${templateOption:sshdPort}"],
 
 	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
 	// initializeCommand runs on the HOST before the container starts.
@@ -316,6 +317,11 @@
 
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
+
+		// The 'base' image bakes 'Port 2222' into sshd_config. Move sshd to the
+		// 'sshdPort' option so 'forwardPorts' reaches it; the edit persists, so
+		// sshd starts on that port at every container start. No-op if it matches.
+		"sshd-port": "[ ! -f /etc/ssh/sshd_config ] || grep -qx 'Port ${templateOption:sshdPort}' /etc/ssh/sshd_config || { sudo sed -i 's/^Port[[:space:]].*/Port ${templateOption:sshdPort}/' /etc/ssh/sshd_config && sudo /etc/init.d/ssh restart >/dev/null; } && echo '14-sshd-port' >> ~/devcontainer-post-create.txt",
 
 		// Disable the copilot-cli Feature's per-start online update check by
 		// removing its flag file. Runs in postCreate (which fully completes before
