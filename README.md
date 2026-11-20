@@ -118,12 +118,14 @@ Published from a separate repo:
 (`claude-code`, `pi-dev`, `speckit`, `otel-collector-contrib`, `superfile`,
 `herdr`). `speckit` installs the `specify` CLI (Spec-Driven Development) via
 uv; it needs uv (from the Dockerfile) and Python (from the `python` Feature),
-both already in this image. `herdr` installs the terminal multiplexer coding
-agents run in; it installs the binary only and starts nothing, so run `herdr`
-to open or reattach to a session. The same Feature also installs herdr-core
-(`hc`), the headless core that keeps programs and agents running in terminals
-that outlive the viewer; `hc --help` lists its commands. herdr-core is
-downloaded from `releases.herdr.dev`, so the image build must reach that host.
+both already in this image. `herdr` installs the herdr TUI (the terminal
+multiplexer coding agents run in) and herdr-core (`hc`, the headless core that
+keeps programs and agents running in terminals that outlive the viewer) with
+upstream's official install scripts. It starts nothing: run `herdr` to open or
+reattach to a session, and `hc --help` lists herdr-core's commands. It also
+installs the herdr-core agent skill for Claude Code and Copilot CLI. The image
+build must reach `herdr.dev`, `github.com`, `releases.herdr.dev` and
+`raw.githubusercontent.com`.
 
 ## LSP code intelligence
 

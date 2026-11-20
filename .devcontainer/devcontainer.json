@@ -117,7 +117,7 @@
 		// "ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
-		// "ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
+		// "ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
