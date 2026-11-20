@@ -109,7 +109,10 @@
 		// Its default 'installCore' option also installs herdr-core (the 'hc'
 		// CLI, from releases.herdr.dev) plus its agent skill at
 		// ~/.claude/skills/herdr-core/SKILL.md. Nothing is started either: the
-		// core starts on first use of 'hc'.
+		// core starts on first use of 'hc'. Unlike herdr's skill, the herdr-core
+		// skill is NOT inert: it matches sub-agent and background-task work,
+		// and outside an hc terminal it asks the user once per session whether
+		// to use hc.
 		"ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
 	}
 }
