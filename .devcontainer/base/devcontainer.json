@@ -99,8 +99,10 @@
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
 		// Installs the herdr TUI ('herdr') and herdr-core ('hc') with upstream's
 		// official install scripts, so the build needs herdr.dev, github.com,
-		// releases.herdr.dev and raw.githubusercontent.com. The herdr TUI is
-		// always the latest release. Nothing is started at container start:
+		// release-assets.githubusercontent.com, releases.herdr.dev and
+		// raw.githubusercontent.com. The herdr TUI is always the latest
+		// release; the weekly no-cache rebuild picks up new ones. Nothing is
+		// started at container start:
 		// run 'herdr' to open or reattach to a session; the core starts on
 		// first use of 'hc'.
 		// Defaults are kept: a container-friendly ~/.config/herdr/config.toml

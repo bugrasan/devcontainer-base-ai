@@ -124,7 +124,8 @@ keeps programs and agents running in terminals that outlive the viewer) with
 upstream's official install scripts. It starts nothing: run `herdr` to open or
 reattach to a session, and `hc --help` lists herdr-core's commands. It also
 installs the herdr-core agent skill for Claude Code and Copilot CLI. The image
-build must reach `herdr.dev`, `github.com`, `releases.herdr.dev` and
+build must reach `herdr.dev`, `github.com`,
+`release-assets.githubusercontent.com`, `releases.herdr.dev` and
 `raw.githubusercontent.com`.
 
 ## LSP code intelligence
