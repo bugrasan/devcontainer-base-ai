@@ -34,7 +34,8 @@ Or reference the image in your own `devcontainer.json`:
 
 Or copy this repo's config into a project.
 It applies the maintainer's chezmoi dotfiles; remove the `chezmoi` entry from `postCreateCommand` to skip them.
-To sync later changes, rerun the last two commands:
+To sync later changes, rerun the last two commands.
+They overwrite local edits, including a removed `chezmoi` entry.
 
 ```bash
 git remote add devcontainer-upstream https://<HOST>/<USER>/devcontainer-base-ai.git
