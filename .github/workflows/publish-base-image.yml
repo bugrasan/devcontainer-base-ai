@@ -172,6 +172,12 @@ jobs:
             command -v pi || exit 1
             echo "✓ pi found"
             pi --version
+            command -v herdr || exit 1
+            echo "✓ herdr found"
+            herdr --version
+            command -v hc || exit 1
+            echo "✓ hc (herdr-core) found"
+            hc --version
             command -v sshd || exit 1
             echo "✓ sshd found"
             grep -qE "^Port 2222" /etc/ssh/sshd_config || exit 1

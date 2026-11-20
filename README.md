@@ -120,7 +120,10 @@ Published from a separate repo:
 uv; it needs uv (from the Dockerfile) and Python (from the `python` Feature),
 both already in this image. `herdr` installs the terminal multiplexer coding
 agents run in; it installs the binary only and starts nothing, so run `herdr`
-to open or reattach to a session.
+to open or reattach to a session. The same Feature also installs herdr-core
+(`hc`), the headless core that keeps programs and agents running in terminals
+that outlive the viewer; `hc --help` lists its commands. herdr-core is
+downloaded from `releases.herdr.dev`, so the image build must reach that host.
 
 ## LSP code intelligence
 

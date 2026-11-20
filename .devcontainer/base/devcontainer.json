@@ -106,6 +106,10 @@
 		// completions. The skill guards itself on HERDR_ENV=1, so it stays inert
 		// for an agent not started inside a herdr pane - which makes it free to
 		// bake alongside the claude-code Feature above.
+		// Its default 'installCore' option also installs herdr-core (the 'hc'
+		// CLI, from releases.herdr.dev) plus its agent skill at
+		// ~/.claude/skills/herdr-core/SKILL.md. Nothing is started either: the
+		// core starts on first use of 'hc'.
 		"ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
 	}
 }
