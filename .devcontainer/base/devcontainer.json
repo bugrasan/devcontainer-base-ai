@@ -67,10 +67,6 @@
 		// typescript-language-server); gopls stays dormant until a Go toolchain is added.
 		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
 
-		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/pi-dev
-		// installsAfter node, since it hard-requires Node.js >=22.19.0 + npm.
-		"ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
-
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/speckit
 		// installs the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+
 		// (the python Feature above) and uv (baked into Dockerfile.mcr-trixie), both
@@ -97,15 +93,21 @@
 		"ghcr.io/bugrasan/devcontainers-features/superfile:1": {},
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
-		// herdr is a background server that owns the terminals coding agents run
-		// in. The Feature installs the binary only - nothing is started at
-		// container start; run 'herdr' to open or reattach to a session.
+		// Installs the herdr TUI ('herdr') and herdr-core ('hc') with upstream's
+		// official install scripts, so the build needs herdr.dev, github.com,
+		// release-assets.githubusercontent.com, releases.herdr.dev and
+		// raw.githubusercontent.com. The herdr TUI is always the latest
+		// release; the weekly no-cache rebuild picks up new ones. Nothing is
+		// started at container start:
+		// run 'herdr' to open or reattach to a session; the core starts on
+		// first use of 'hc'.
 		// Defaults are kept: a container-friendly ~/.config/herdr/config.toml
 		// (skips the first-run wizard, stops both background calls to herdr.dev),
-		// herdr's agent skill at ~/.claude/skills/herdr/SKILL.md, and bash/zsh
-		// completions. The skill guards itself on HERDR_ENV=1, so it stays inert
-		// for an agent not started inside a herdr pane - which makes it free to
-		// bake alongside the claude-code Feature above.
-		"ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
+		// bash/zsh completions, and the herdr-core agent skill for Claude Code
+		// (~/.claude/skills) and Copilot CLI (~/.copilot/skills). herdr's own
+		// skill is off by default. The herdr-core skill is NOT inert: it matches
+		// sub-agent and background-task work, and outside an hc terminal it asks
+		// the user once per session whether to use hc.
+		"ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
 	}
 }

@@ -23,7 +23,7 @@
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
 	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
-	// claude-code, pi-dev, speckit, otel-collector-contrib), pre-baked and published
+	// claude-code, speckit, otel-collector-contrib), pre-baked and published
 	// every Saturday 06:54 UTC by .github/workflows/publish-base-image.yml
 	// (see .devcontainer/base/devcontainer.json for the build definition).
 	// w/ baked-in features 'common-utils', 'node', 'python', 'github-cli', 'copilot-cli'
@@ -108,16 +108,14 @@
 		// "ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
 
 		// Published from https://github.com/bugrasan/devcontainers-features
-		// "ghcr.io/bugrasan/devcontainers-features/pi-dev:1": {},
-
-		// Published from https://github.com/bugrasan/devcontainers-features
 		// "ghcr.io/bugrasan/devcontainers-features/speckit:1": {}
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/superfile
 		// "ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
-		// "ghcr.io/bugrasan/devcontainers-features/herdr:1": {}
+		// Uncomment only if you swap the 'image' above for one without it baked in.
+		// "ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
