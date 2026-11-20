@@ -118,9 +118,7 @@
 		// "ghcr.io/bugrasan/devcontainers-features/superfile:1": {}
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
-		// Uncomment only if you swap the 'image' above for one without it baked in:
-		// on an image that already has herdr-core, upstream's herdr-core script
-		// updates in place, starting a core during the build.
+		// Uncomment only if you swap the 'image' above for one without it baked in.
 		// "ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
 	},
 
