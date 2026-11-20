@@ -232,12 +232,12 @@
 		// Feature), Pylance (python Feature's VS Code extension).
 		"ENABLE_LSP_TOOL": "1",
 
-		// SSHD_PORT/START_SSHD are intentionally omitted: sshd is baked into the 'base'
-		// image and the Feature reads these only at image-build time, so setting them at
-		// container-start has no effect. Uncomment them (and the sshd Feature above) only
-		// if you swap to a base image without sshd baked in; then keep SSHD_PORT in sync
-		// with the 'sshdPort' template option that 'forwardPorts'/'portsAttributes' use.
-		// "SSHD_PORT": "${templateOption:sshdPort}",
+		// SSHD_PORT/START_SSHD are omitted: the sshd Feature reads them only at
+		// image-build time. SSHD_PORT isn't needed even with a swapped image:
+		// the 'sshd-port' postCreateCommand sets the port at container
+		// creation. Uncomment START_SSHD (and the sshd Feature above) only for
+		// a base image without sshd baked in.
+		// "SSHD_PORT": "${templateOption:sshdPort}", // not needed
 		// "START_SSHD": "true",
 		// set random password
 		// "NEW_PASSWORD": "random",
@@ -318,10 +318,11 @@
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
 
-		// The 'base' image bakes 'Port 2222' into sshd_config. Move sshd to the
-		// 'sshdPort' option so 'forwardPorts' reaches it; the edit persists, so
-		// sshd starts on that port at every container start. No-op if it matches.
-		"sshd-port": "[ ! -f /etc/ssh/sshd_config ] || grep -qx 'Port ${templateOption:sshdPort}' /etc/ssh/sshd_config || { sudo sed -i 's/^Port[[:space:]].*/Port ${templateOption:sshdPort}/' /etc/ssh/sshd_config && sudo /etc/init.d/ssh restart >/dev/null; } && echo '14-sshd-port' >> ~/devcontainer-post-create.txt",
+		// The 'base' image bakes 'Port 2222' into sshd_config. Rewrite it to
+		// the 'sshdPort' port and restart sshd so 'forwardPorts' reaches it. A
+		// container restart keeps the edit; a rebuild reruns this. No-op if the
+		// port is already set. Fails if sshd doesn't come up on that port.
+		"sshd-port": "p=${templateOption:sshdPort} f=/etc/ssh/sshd_config; case $p in ''|*[!0-9]*) exit 1;; esac; [ ! -f $f ] || grep -qx \"Port $p\" $f || { sudo sed -i \"s/^Port[[:space:]].*/Port $p/\" $f && grep -qx \"Port $p\" $f && sudo /etc/init.d/ssh restart >/dev/null && sleep 1 && sudo /etc/init.d/ssh status >/dev/null; } && echo '14-sshd-port' >> ~/devcontainer-post-create.txt",
 
 		// Disable the copilot-cli Feature's per-start online update check by
 		// removing its flag file. Runs in postCreate (which fully completes before

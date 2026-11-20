@@ -180,7 +180,9 @@ jobs:
             echo "✓ herdr-core skill baked in for claude and copilot"
             command -v sshd || exit 1
             echo "✓ sshd found"
-            grep -qE "^Port 2222" /etc/ssh/sshd_config || exit 1
+            grep -qx "Port 2222" /etc/ssh/sshd_config || exit 1
             echo "✓ sshd configured on port 2222"
+            test -x /etc/init.d/ssh || exit 1
+            echo "✓ sshd init script found"
             echo "✓ All tools verified"
           '
