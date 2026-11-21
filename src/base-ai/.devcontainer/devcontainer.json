@@ -443,8 +443,9 @@
 		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
 		"--rm",
 		// stable container name, so 'hc machine add --via' keeps working
-		// after a rebuild; Docker allows only [a-zA-Z0-9][a-zA-Z0-9_.-]+
-		"--name", "${localWorkspaceFolderBasename}-${devcontainerId}",
+		// after a rebuild; a fixed prefix, since Docker restricts names to
+		// [a-zA-Z0-9][a-zA-Z0-9_.-]+ and folder names may break that rule
+		"--name", "devc-${devcontainerId}",
 		// vnc for desktop-lite feature
 		// "--shm-size=1g",
 	]

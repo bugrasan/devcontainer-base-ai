@@ -11,10 +11,10 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
 
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
   It holds a `uuidgen` UUID without dashes in lowercase.
-  A launch writes it if it is missing or not 32 hex characters, and the template's `.gitignore` excludes it.
+  A launch writes it if it is missing or not 32 hex characters, and `.devcontainer/.gitignore` excludes it.
 - `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
-- The container has the same name, `<folder>-<devcontainerId>`, so an `hc machine add --via` entry should keep working after a rebuild.
+- The container is named `devc-<devcontainerId>`, so an `hc machine add --via` entry should keep working after a rebuild.
   `docker ps` shows the name.
 
 `<devcontainerId>` is a 52-character hash of the project folder path and the `devcontainer.json` path.
@@ -27,9 +27,7 @@ When you delete a project, delete its state folder too.
 When you move or rename the project folder, the next container gets a new, empty state folder and a new name.
 To keep the state, replace the new folder with the old one while the container is stopped, then add the `hc` machine entry again.
 
-Docker allows only ASCII letters, digits, `_`, `.`, and `-` in a container name, and the first character must be a letter or digit.
-The project folder name is part of the container name, so a folder name outside that rule, for example one with a space, stops the container from starting.
-If Docker reports that the name is already in use, the previous container is still being removed; wait a moment and reopen.
+If Docker reports that the container name is already in use, the previous container is still being removed; wait a moment and reopen.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
