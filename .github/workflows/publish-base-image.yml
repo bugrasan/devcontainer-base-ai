@@ -178,8 +178,10 @@ jobs:
             test -f "$HOME/.claude/skills/herdr-core/SKILL.md" || exit 1
             test -f "$HOME/.copilot/skills/herdr-core/SKILL.md" || exit 1
             echo "✓ herdr-core skill baked in for claude and copilot"
-            test -d "$HOME/.local/state" && test -O "$HOME/.local/state" || exit 1
-            echo "✓ ~/.local/state owned by the user (herdr-core state mount)"
+            test -O "$HOME/.local/state" && test -O "$HOME/.local/state/herdr-core" || exit 1
+            echo "✓ ~/.local/state/herdr-core owned by the user (herdr-core state mount)"
+            test -f /etc/machine-id && ! test -s /etc/machine-id || exit 1
+            echo "✓ /etc/machine-id is an empty file"
             command -v sshd || exit 1
             echo "✓ sshd found"
             grep -qx "Port 2222" /etc/ssh/sshd_config || exit 1

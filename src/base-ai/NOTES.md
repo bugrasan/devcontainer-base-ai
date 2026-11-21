@@ -7,20 +7,21 @@
 
 ## herdr-core identity
 
-On first launch, `initializeCommand` creates two paths on the host.
-`.devcontainer/.gitignore` excludes both.
+On each launch, `initializeCommand` sets up the herdr-core identity on the host.
+`.devcontainer/.gitignore` excludes both paths it creates in `.devcontainer/`.
 
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
-  It holds a `uuidgen` UUID without dashes in lowercase, its start replaced by the folder name.
-- `.devcontainer/herdr-core-state/` is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
-  It holds terminal output, which may contain secrets, so the folder has mode 700.
+  It holds a `uuidgen` UUID without dashes in lowercase, written once.
+- `~/.config/herdr-core/container/<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
+  It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
+- `.devcontainer/herdr-core-state` is a link to that folder, because `mounts` can't read the machine-id from the file
 
 With both on the host, a recreated container should keep the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
-Don't copy them to another project, or both projects share one machine-id and state.
+Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one identity.
+To start over, delete it, and the next launch writes a new one.
 
-- The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
-  Without it, the file holds only the folder name and stays that way, so delete the file after you install `uuidgen`.
-- systemd tools such as `systemd-id128` reject this machine-id, because the folder name is not hex
+The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
+Without it, the launch fails until you install it.
 
 ## LSP code intelligence
 

@@ -45,8 +45,9 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}
 
 # Create a user directories to fix bind-mount permissions
+# (.local/state/herdr-core: target of the template's herdr-core state mount)
 RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
-    && mkdir -p /home/${USERNAME}/.local/state \
+    && mkdir -p /home/${USERNAME}/.local/state/herdr-core \
     && mkdir -p /home/${USERNAME}/.cache \
     && mkdir -p /home/${USERNAME}/.ssh \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.vscode-server/ \
@@ -54,6 +55,10 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cache/ \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/ \
     && chmod 700 /home/${USERNAME}/.ssh
+
+# Empty /etc/machine-id: an image used on many machines should ship an empty
+# file, so each container can bind-mount its own ID over it (machine-id(5))
+RUN : > /etc/machine-id
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}

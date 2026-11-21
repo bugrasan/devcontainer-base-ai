@@ -164,14 +164,12 @@
 		"worktrees": "mkdir -p \"${localWorkspaceFolder}.worktrees\"",
 		// .env file fix - see also variable 'runArgs'
 		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
-		// herdr-core: a stable /etc/machine-id keeps the core identity when
-		// the container is recreated (herdr-core issue #304). A uuidgen UUID,
-		// no dashes, lowercase, its start replaced by the folder name.
-		// Written once, then kept. Needs 'uuidgen' on the host.
-		"herdr-machine-id": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; [ -f \"$f\" ] || awk -v n=\"${localWorkspaceFolderBasename}\" -v u=\"$(uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]')\" 'BEGIN { print n substr(u, length(n) + 1) }' > \"$f\"",
-		// herdr-core: host folder for the core state directory, see 'mounts'.
-		// Mode 700: the state holds terminal output, which may contain secrets.
-		"herdr-core-state": "d=\"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"; mkdir -p \"$d\" && chmod 700 \"$d\"",
+		// herdr-core: a stable machine-id and state dir keep the core identity
+		// when the container is recreated (herdr-core issue #304). Writes a
+		// uuidgen UUID (no dashes, lowercase) once, creates the host state dir
+		// ~/.config/herdr-core/container/<id>, and links it as the static
+		// 'mounts' source .devcontainer/herdr-core-state. Needs 'uuidgen'.
+		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; [ -s \"$f\" ] || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; [ -s \"$f\" ] || exit 1; d=\"$HOME/.config/herdr-core/container/$(cat \"$f\")\"; mkdir -p \"$d\" && chmod 700 \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
 		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
 		// uncomment for a single rebuild then comment it out again
 		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",
@@ -196,9 +194,10 @@
 		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
 		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
 
-		// herdr-core: machine-id and core state dir live on the host, so a
-		// recreated container (see '--rm' in 'runArgs') keeps the core
-		// identity. Both are created by 'initializeCommand'.
+		// herdr-core: machine-id and state dir come from the host (see
+		// 'initializeCommand'), so a recreated container (see '--rm' in
+		// 'runArgs') keeps the core identity. The state source is a link to
+		// ~/.config/herdr-core/container/<machine-id>.
 		"source=${localWorkspaceFolder}/.devcontainer/herdr-machine-id,target=/etc/machine-id,type=bind,readonly,consistency=cached",
 		"source=${localWorkspaceFolder}/.devcontainer/herdr-core-state,target=/home/vscode/.local/state/herdr-core,type=bind,consistency=cached",
 
@@ -344,12 +343,6 @@
 		// still refreshes to latest at each weekly base-image rebuild. Delete this
 		// line to restore the per-start check.
 		"disable-copilot-autoupdate": "sudo rm -f /etc/devcontainer-copilot-cli/auto-update && echo '15-disable-copilot-autoupdate' >> ~/devcontainer-post-create.txt",
-
-		// The herdr-core state mount makes the runtime create a missing
-		// ~/.local/state as root. The 'base' image creates it; for other
-		// images, give it back to vscode so other tools can write there.
-		// No-op if vscode already owns it.
-		"local-state-owner": "[ -O ~/.local/state ] || sudo chown vscode:vscode ~/.local/state && echo '16-local-state-owner' >> ~/devcontainer-post-create.txt",
 	},
 	// "yarn install",
 
