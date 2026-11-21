@@ -1,0 +1,4 @@
+# herdr-core identity, written by initializeCommand: one per checkout, never
+# shared; the state holds terminal output, which may contain secrets
+/herdr-machine-id
+/herdr-core-state/

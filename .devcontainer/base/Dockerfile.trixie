@@ -46,7 +46,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 
 # Create a user directories to fix bind-mount permissions
 RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
-    && mkdir -p /home/${USERNAME}/.local \
+    && mkdir -p /home/${USERNAME}/.local/state \
     && mkdir -p /home/${USERNAME}/.cache \
     && mkdir -p /home/${USERNAME}/.ssh \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.vscode-server/ \
