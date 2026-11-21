@@ -5,6 +5,19 @@
 - A `.env` file is auto-created at the workspace root on first launch — add secrets there.
 - Reopen in container, then rebuild whenever `.devcontainer/devcontainer.json` changes.
 
+## herdr-core identity
+
+On first launch, `initializeCommand` creates two paths on the host.
+The template's `.gitignore` excludes both.
+
+- `.devcontainer/herdr-machine-id`, mounted read-only as `/etc/machine-id`.
+  It holds a `uuidgen` UUID without dashes in lowercase, its start replaced by the folder name.
+  The host needs `uuidgen`.
+- `.devcontainer/herdr-core-state/`, mounted as `~/.local/state/herdr-core`, the herdr-core state dir.
+  It holds terminal output, which may contain secrets.
+
+With both on the host, a recreated container keeps the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
+
 ## LSP code intelligence
 
 `ENABLE_LSP_TOOL=1` is set so AI agents use language servers (go-to-definition,
