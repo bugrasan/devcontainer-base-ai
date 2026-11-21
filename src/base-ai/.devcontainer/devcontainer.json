@@ -169,7 +169,7 @@
 		// uuidgen UUID (no dashes, lowercase) unless a valid id exists, creates
 		// ~/.config/herdr-core/container/<id> (mode 700), and links it as the
 		// static 'mounts' source .devcontainer/herdr-core-state. Needs uuidgen.
-		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; grep -qx '[0-9a-f]\\{32\\}' \"$f\" 2>/dev/null || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; grep -qx '[0-9a-f]\\{32\\}' \"$f\" || exit 1; c=\"$HOME/.config/herdr-core\"; d=\"$c/container/$(cat \"$f\")\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
+		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1; c=\"$HOME/.config/herdr-core\"; d=\"$c/container/$id\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
 		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
 		// uncomment for a single rebuild then comment it out again
 		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",
