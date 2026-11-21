@@ -24,11 +24,12 @@ With the machine-id and the state folder on the host, a recreated container shou
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one machine-id.
 To start over, delete the id file and the state folder, and the next launch writes a new id.
 When you delete a project, delete its state folder too.
-When you move or rename the project folder, the next container gets a new, empty state folder.
-To keep the state, replace the new folder with the old one while the container is stopped.
+When you move or rename the project folder, the next container gets a new, empty state folder and a new name.
+To keep the state, replace the new folder with the old one while the container is stopped, then add the `hc` machine entry again.
 
-Docker allows only letters, digits, `_`, `.`, and `-` in a container name, and the first character must be a letter or digit.
-The project folder name has to follow that rule, because it is part of the container name.
+Docker allows only ASCII letters, digits, `_`, `.`, and `-` in a container name, and the first character must be a letter or digit.
+The project folder name is part of the container name, so a folder name outside that rule, for example one with a space, stops the container from starting.
+If Docker reports that the name is already in use, the previous container is still being removed; wait a moment and reopen.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
