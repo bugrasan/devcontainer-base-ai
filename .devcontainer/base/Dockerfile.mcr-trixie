@@ -38,7 +38,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
 
 # Create a user directories to fix bind-mount permissions
-# (.local/state/herdr-core: target of the template's herdr-core state mount)
+# (.local/state/herdr-core: target of the template's herdr-core state mount).
+# Empty /etc/machine-id: an image used on many machines should ship an empty
+# file, so each container can bind-mount its own ID over it (machine-id(5)).
 RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
     && mkdir -p /home/${USERNAME}/.local/state/herdr-core \
     && mkdir -p /home/${USERNAME}/.cache \
@@ -48,11 +50,8 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cache/ \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh/ \
     && chmod 700 /home/${USERNAME}/.local/state/herdr-core \
-    && chmod 700 /home/${USERNAME}/.ssh
-
-# Empty /etc/machine-id: an image used on many machines should ship an empty
-# file, so each container can bind-mount its own ID over it (machine-id(5))
-RUN : > /etc/machine-id
+    && chmod 700 /home/${USERNAME}/.ssh \
+    && : > /etc/machine-id
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}

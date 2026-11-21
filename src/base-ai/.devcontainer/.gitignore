@@ -1,4 +1,0 @@
-# herdr-core, written by initializeCommand: the machine-id is confidential
-# (machine-id(5)), and herdr-core-state is a link to the host state dir
-/herdr-machine-id
-/herdr-core-state

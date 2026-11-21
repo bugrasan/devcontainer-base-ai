@@ -8,12 +8,13 @@
 ## herdr-core identity
 
 On each launch, `initializeCommand` sets up the herdr-core identity on the host.
-`.devcontainer/.gitignore` excludes both paths it creates in `.devcontainer/`.
+The template's `.gitignore` excludes both paths it creates in `.devcontainer/`.
 
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
   It holds a `uuidgen` UUID without dashes in lowercase.
   A launch writes it if it is missing or not 32 hex characters.
-- `~/.config/herdr-core/container/<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
+- `~/.config/herdr-core/container/<folder>-<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
+  The folder name keeps projects with the same folder name apart.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 - `.devcontainer/herdr-core-state` is a link to that folder, because `mounts` can't read the machine-id from the file
 
