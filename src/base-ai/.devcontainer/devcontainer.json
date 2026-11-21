@@ -166,10 +166,10 @@
 		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
 		// herdr-core: a stable machine-id and state dir keep the core identity
 		// when the container is recreated (herdr-core issue #304). Writes a
-		// uuidgen UUID (no dashes, lowercase) once, creates the host state dir
-		// ~/.config/herdr-core/container/<id>, and links it as the static
-		// 'mounts' source .devcontainer/herdr-core-state. Needs 'uuidgen'.
-		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; [ -s \"$f\" ] || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; [ -s \"$f\" ] || exit 1; d=\"$HOME/.config/herdr-core/container/$(cat \"$f\")\"; mkdir -p \"$d\" && chmod 700 \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
+		// uuidgen UUID (no dashes, lowercase) unless a valid id exists, creates
+		// ~/.config/herdr-core/container/<id> (mode 700), and links it as the
+		// static 'mounts' source .devcontainer/herdr-core-state. Needs uuidgen.
+		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; grep -qx '[0-9a-f]\\{32\\}' \"$f\" 2>/dev/null || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; grep -qx '[0-9a-f]\\{32\\}' \"$f\" || exit 1; c=\"$HOME/.config/herdr-core\"; d=\"$c/container/$(cat \"$f\")\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
 		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
 		// uncomment for a single rebuild then comment it out again
 		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",

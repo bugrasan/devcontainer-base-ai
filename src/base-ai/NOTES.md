@@ -11,17 +11,22 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
 `.devcontainer/.gitignore` excludes both paths it creates in `.devcontainer/`.
 
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
-  It holds a `uuidgen` UUID without dashes in lowercase, written once.
+  It holds a `uuidgen` UUID without dashes in lowercase.
+  A launch writes it if it is missing or not 32 hex characters.
 - `~/.config/herdr-core/container/<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 - `.devcontainer/herdr-core-state` is a link to that folder, because `mounts` can't read the machine-id from the file
 
-With both on the host, a recreated container should keep the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
+With the machine-id and the state folder on the host, a recreated container should keep the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one identity.
-To start over, delete it, and the next launch writes a new one.
+To start over, delete the id file and its state folder, and the next launch writes a new id.
+When you delete a project, delete its state folder too.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
+
+The state mount's source is a link to `~/.config/herdr-core/`, so a Docker VM, such as Docker Desktop, colima, or Podman machine, must share that folder.
+After you update the template, run `docker pull ghcr.io/bugrasan/devcontainer-base-ai/base:latest`, because an older cached image may lack `~/.local/state/herdr-core`.
 
 ## LSP code intelligence
 
