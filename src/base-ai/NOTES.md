@@ -14,7 +14,7 @@ The template's `.gitignore` excludes both paths it creates in `.devcontainer/`.
   It holds a `uuidgen` UUID without dashes in lowercase.
   A launch writes it if it is missing or not 32 hex characters.
 - `~/.config/herdr-core/container/<folder>-<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
-  The folder name keeps projects with the same folder name apart.
+  The folder name shows which project a state folder belongs to; the machine-id keeps projects with the same folder name apart.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 - `.devcontainer/herdr-core-state` is a link to that folder, because `mounts` can't read the machine-id from the file
 
@@ -22,6 +22,7 @@ With the machine-id and the state folder on the host, a recreated container shou
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one identity.
 To start over, delete the id file and its state folder, and the next launch writes a new id.
 When you delete a project, delete its state folder too.
+When you rename the project folder, rename its state folder to match, or the next container starts with empty state.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
