@@ -22,7 +22,7 @@ With the machine-id and the state folder on the host, a recreated container shou
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one identity.
 To start over, delete the id file and its state folder, and the next launch writes a new id.
 When you delete a project, delete its state folder too.
-When you rename the project folder, rename its state folder to match, or the next container starts with empty state.
+When you rename the project folder, rename its state folder to match before the next launch, or the next container starts with empty state.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
