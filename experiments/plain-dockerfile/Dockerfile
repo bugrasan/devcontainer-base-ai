@@ -3,6 +3,10 @@
 # with "docker build" only: no devcontainer CLI, Features, or MCR base image.
 # Parity build: same packages, files, and config as the Feature build, so a
 # size difference shows only the overhead of the build method.
+
+# The Features fetch with both curl and wget (DL4001). hadolint 2.15.1 lints
+# RUN as POSIX sh after any ARG or ENV although SHELL is bash (SC3xxx).
+# hadolint global ignore=DL4001,SC3037,SC3044,SC3054,SC3060
 FROM debian:trixie
 
 # Bash with pipefail, so a failed download inside a pipe fails the build.
@@ -22,9 +26,8 @@ ENV LANG=C.UTF-8 \
 
 # Layer 1 – all Debian packages, so dpkg state, logs, and the locale archive
 # are written once. Blocks follow the Feature build's order; versions float
-# and recommends stay off except for zsh, as in the Features. SHELL is bash:
-# hadolint checks apt-get arguments as POSIX sh (SC3054).
-# hadolint ignore=DL3008,DL3015,SC3054
+# and recommends stay off except for zsh, as in the Features.
+# hadolint ignore=DL3008,DL3015
 RUN <<'EOF'
 set -ex
 apt-get update
@@ -65,8 +68,21 @@ apt-get -y install --no-install-recommends libpcre2-posix3
 apt-get -y install --no-install-recommends bat bats bats-assert bats-file \
     ca-certificates curl eza fastfetch fd-find fzf git-delta gnupg2 jq just \
     lazygit mc pass ripgrep shellcheck sudo vim vim-doc vim-scripts xh
-# node 2.1.2 prerequisites; copilot-cli, github-cli, and speckit need no
-# packages beyond the ones above
+# github-cli 1.1.3, in its Feature slot (copilot-cli before it and its own
+# packages are installed above): newest x.y.z cli/cli release .deb, fetched
+# with wget and the Feature's flags
+gh_version="$(git ls-remote --tags https://github.com/cli/cli \
+    | grep -oE 'tags/v[0-9]+\.[0-9]+\.[0-9]+$' | sed 's|^tags/v||' \
+    | sort -rVu | sed -n '1p')"
+gh_deb="gh_${gh_version}_linux_$(dpkg --print-architecture).deb"
+mkdir -p /tmp/ghcli
+pushd /tmp/ghcli
+wget -q --show-progress --progress=dot:giga \
+    "https://github.com/cli/cli/releases/download/v${gh_version}/${gh_deb}"
+dpkg -i "/tmp/ghcli/${gh_deb}"
+popd
+rm -rf /tmp/ghcli
+# node 2.1.2 prerequisites
 apt-get -y install --no-install-recommends apt-transport-https curl \
     ca-certificates tar gnupg2 dirmngr libatomic1
 # python 1.8.1 (os-provided): its source-build dependencies, installed even
@@ -78,18 +94,8 @@ apt-get -y install --no-install-recommends ca-certificates curl dirmngr gcc \
 apt-get -y install --no-install-recommends python3 python3-doc python3-pip \
     python3-venv python3-dev python3-tk
 apt-get -y install --no-install-recommends pipx
-# sshd 1.1.0
+# sshd 1.1.0; speckit, later, needs no packages beyond these
 apt-get -y install --no-install-recommends openssh-server openssh-client lsof
-# github-cli 1.1.3: newest x.y.z tag of cli/cli as .deb from GitHub releases
-gh_version="$(git ls-remote --tags https://github.com/cli/cli \
-    | grep -oE 'tags/v[0-9]+\.[0-9]+\.[0-9]+$' | sed 's|^tags/v||' \
-    | sort -rVu | sed -n '1p')"
-gh_deb="gh_${gh_version}_linux_$(dpkg --print-architecture).deb"
-mkdir -p /tmp/ghcli
-curl -fsSL -o "/tmp/ghcli/${gh_deb}" \
-    "https://github.com/cli/cli/releases/download/v${gh_version}/${gh_deb}"
-dpkg -i "/tmp/ghcli/${gh_deb}"
-rm -rf /tmp/ghcli
 # Dockerfile.mcr-trixie cleanup; every Feature removes the apt lists, too
 apt-get clean
 rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
@@ -97,8 +103,6 @@ EOF
 
 # Layer 2 – git 1.3.8 ("latest" in the MCR base image): the newest tag on
 # the first page of the GitHub tags API, built into /usr/local as there.
-# SHELL is bash; hadolint checks this array use as POSIX sh (SC3054).
-# hadolint ignore=SC3054
 RUN <<'EOF'
 set -ex
 git_version="$(curl -fsSL -H 'Accept: application/vnd.github.v3+json' \
@@ -117,9 +121,7 @@ EOF
 
 # Layer 3 – common-utils 2.7.1 with the MCR options (user, sudo, rc
 # snippets, zsh with Oh My Zsh, shims), the Dockerfile.mcr-trixie home
-# folders, and sshd 1.1.0 on port 2222. SHELL is bash; hadolint checks
-# common-utils' "echo -e" as POSIX sh (SC3037).
-# hadolint ignore=SC3037
+# folders, and sshd 1.1.0 on port 2222.
 RUN <<'EOF'
 set -ex
 home="/home/${USERNAME}"
@@ -221,16 +223,17 @@ echo 'source $HOME/.profile' >> "${home}/.zprofile"
 chown "${USERNAME}:${USERNAME}" "${home}/.zprofile"
 cat /tmp/rc_snippet.sh >> /etc/zsh/zshrc
 rm -f /tmp/rc_snippet.sh /tmp/bash_theme_snippet.sh
-# Oh My Zsh for the user: shallow clone, repacked, devcontainers theme, and a
-# .zshrc from its template with auto-update off; /root gets a copy later
+# Oh My Zsh for the user with apt git (the source build did not exist yet
+# there): shallow clone, repacked, devcontainers theme, and a .zshrc from its
+# template with auto-update off; /root gets a copy in layer 5
 umask g-w,o-w
 omz="${home}/.oh-my-zsh"
 mkdir -p "${omz}"
-git clone --depth=1 -c core.eol=lf -c core.autocrlf=false \
+/usr/bin/git clone --depth=1 -c core.eol=lf -c core.autocrlf=false \
     -c fsck.zeroPaddedFilemode=ignore -c fetch.fsck.zeroPaddedFilemode=ignore \
     -c receive.fsck.zeroPaddedFilemode=ignore \
     https://github.com/ohmyzsh/ohmyzsh "${omz}"
-git -C "${omz}" repack -a -d -f --depth=1 --window=1
+/usr/bin/git -C "${omz}" repack -a -d -f --depth=1 --window=1
 mkdir -p "${omz}/custom/themes"
 cat > "${omz}/custom/themes/devcontainers.zsh-theme" <<'ZSHTHEME'
 # Oh My Zsh! theme - partly inspired by https://github.com/ohmyzsh/ohmyzsh/blob/master/themes/robbyrussell.zsh-theme
@@ -362,7 +365,8 @@ chmod +x /usr/local/share/ssh-init.sh
 EOF
 
 # Layer 4 – Dockerfile.mcr-trixie: uv in ~/.local/bin, installed as the
-# user, so its installer edits the user's rc files; its cache is dropped.
+# user; ~/.local/bin is on PATH already, so the installer leaves the rc
+# files alone. Its cache is dropped.
 # hadolint ignore=DL3066
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
@@ -372,8 +376,8 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && rm -rf "$HOME/.cache"/*
 USER root
 
 # Layer 5 – the Feature build's second common-utils run copies the user's
-# zsh setup, by now with uv's rc edit, to /root; then the release binaries
-# of otel-collector-contrib, copilot-cli, superfile, and herdr.
+# Oh My Zsh and .zshrc to /root; then the release binaries of
+# otel-collector-contrib, copilot-cli, superfile, and herdr.
 RUN <<'EOF'
 set -ex
 home="/home/${USERNAME}"
@@ -474,15 +478,19 @@ nohup /usr/local/bin/otelcol-contrib --config "\${CONFIG}" >> "\${LOG_FILE}" 2>&
 echo \$! > "\${PID_FILE}"
 OTELSTART
 chmod 0755 /usr/local/share/otel-collector-contrib/start.sh
-# copilot-cli 1.1.4: latest release binary; the flag file enables the
-# Feature's per-start update check, which only a dev container runs
+/usr/local/bin/otelcol-contrib --version
+# copilot-cli 1.1.4: latest release binary, fetched with wget and the
+# Feature's flags; the flag file enables the Feature's per-start update
+# check, which only a dev container runs
 arch="$(dpkg --print-architecture)"
 if [ "${arch}" = amd64 ]; then arch=x64; fi
 mkdir -p /tmp/copilotcli
-curl -fsSL -o "/tmp/copilotcli/copilot-linux-${arch}.tar.gz" \
+pushd /tmp/copilotcli
+wget --show-progress --progress=dot:giga \
     "https://github.com/github/copilot-cli/releases/latest/download/copilot-linux-${arch}.tar.gz"
-tar -xzf "/tmp/copilotcli/copilot-linux-${arch}.tar.gz" -C /tmp/copilotcli
-mv /tmp/copilotcli/copilot /usr/local/bin/copilot
+tar -xzf "/tmp/copilotcli/copilot-linux-${arch}.tar.gz"
+mv copilot /usr/local/bin/copilot
+popd
 rm -rf /tmp/copilotcli
 mkdir -p /etc/devcontainer-copilot-cli
 touch /etc/devcontainer-copilot-cli/auto-update
@@ -542,9 +550,8 @@ ENV PYTHON_PATH=/usr/local/python/current \
 
 # Layer 6 – node 2.1.2 (node 24 through nvm, yarn through corepack), python
 # 1.8.1 (os-provided, 12 pipx tools), and the npm-packages Feature; tool
-# versions float, as in the Features. SHELL is bash; hadolint checks the
-# PATH substitution as POSIX sh (SC3060).
-# hadolint ignore=DL3013,SC3060
+# versions float, as in the Features.
+# hadolint ignore=DL3013
 RUN <<'EOF'
 set -ex
 # Append a line to the global bash and zsh rc files once, as both do.
@@ -720,6 +727,8 @@ SPFCONFIG
 chmod 0644 "${home}/.config/superfile/config.toml"
 chown "${USERNAME}:${USERNAME}" "${home}/.config"
 chown -R "${USERNAME}:${USERNAME}" "${home}/.config/superfile"
+# superfile's last step: spf --version as root (writes root's theme files)
+/usr/local/bin/spf --version
 # lsp-config (local Feature): Copilot CLI language servers and a short
 # Claude Code memory that prefers LSP over grep
 mkdir -p "${home}/.copilot"
@@ -802,7 +811,14 @@ if [ "$(readlink -f "$(command -v hc || true)")" = /usr/local/bin/herdr-core ]; 
 else
     echo "WARNING: 'hc' is not herdr-core in this image - skipping the herdr-core agent skill."
 fi
+# herdr's last steps, as root
+/usr/local/bin/herdr --version
+/usr/local/bin/herdr-core --version
 EOF
+
+# Default shell for the image config, as in the Feature image (the bash
+# SHELL above would otherwise persist into images built from this one).
+SHELL ["/bin/sh", "-c"]
 
 # Image config of the Feature build: user vscode, home folder as WORKDIR
 # (set in layer 4), and bash as the default command.

@@ -44,6 +44,7 @@ for g in nvm python pipx ssh; do check "group ${g}" in_group "${g}"; done
 check "passwordless sudo" sudo -n true
 check "sudoers file" root_test -f /etc/sudoers.d/vscode
 check "HOME" [ "${HOME}" = /home/vscode ]
+check "WORKDIR" [ "${PWD}" = /home/vscode ]
 check "LANG" env_is LANG C.UTF-8
 check "locale en_US.UTF-8" sh -c 'locale -a | grep -qix en_US.utf8'
 check "NVM_DIR" env_is NVM_DIR /usr/local/share/nvm
@@ -121,6 +122,7 @@ check "home .local owner" owned ~/.local vscode
 check "home .cache owner" owned ~/.cache vscode
 check "uv" test -x ~/.local/bin/uv
 check "uvx" test -x ~/.local/bin/uvx
+check "uv cache" test -d ~/.cache/uv
 
 # --- sshd --------------------------------------------------------------------
 check "sshd Port 2222" grep -qx 'Port 2222' /etc/ssh/sshd_config
@@ -223,6 +225,9 @@ ver otelcol-contrib otelcol-contrib --version
 ver spf spf --version
 ver herdr herdr --version
 ver herdr-core herdr-core --version
+echo "PATH=${PATH}"
+echo "=== /etc/profile.d/00-restore-env.sh"
+cat /etc/profile.d/00-restore-env.sh
 echo "=== npm globals"
 # shellcheck disable=SC2016 # JavaScript template literal
 npm ls -g --depth=0 --json </dev/null 2>/dev/null | node -e '
