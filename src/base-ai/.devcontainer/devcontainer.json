@@ -166,11 +166,12 @@
 		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
 		// herdr-core: a stable machine-id and state dir keep the core identity
 		// when the container is recreated (herdr-core issue #304). Writes a
-		// uuidgen UUID (no dashes, lowercase) unless a valid id exists, creates
-		// ~/.config/herdr-core/container/<folder>-<id> (mode 700), and links it
-		// as the static 'mounts' source .devcontainer/herdr-core-state.
+		// uuidgen UUID (no dashes, lowercase) unless a valid id exists.
 		// Needs uuidgen.
-		"herdr-core": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1; c=\"$HOME/.config/herdr-core\"; d=\"$c/container/${localWorkspaceFolderBasename}-$id\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\" && ln -sfn \"$d\" \"${localWorkspaceFolder}/.devcontainer/herdr-core-state\"",
+		"herdr-machine-id": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1",
+		// herdr-core: host state dir, mounted in 'mounts'; mode 700, since the
+		// state holds terminal output, which may contain secrets
+		"herdr-core-state": "c=\"${localEnv:HOME}/.config/herdr-core\"; d=\"$c/container/${localWorkspaceFolderBasename}-${devcontainerId}\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\"",
 		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
 		// uncomment for a single rebuild then comment it out again
 		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",
@@ -197,10 +198,9 @@
 
 		// herdr-core: machine-id and state dir come from the host (see
 		// 'initializeCommand'), so a recreated container (see '--rm' in
-		// 'runArgs') keeps the core identity. The state source is a link to
-		// ~/.config/herdr-core/container/<folder>-<machine-id>.
+		// 'runArgs') keeps the core identity
 		"source=${localWorkspaceFolder}/.devcontainer/herdr-machine-id,target=/etc/machine-id,type=bind,readonly,consistency=cached",
-		"source=${localWorkspaceFolder}/.devcontainer/herdr-core-state,target=/home/vscode/.local/state/herdr-core,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.config/herdr-core/container/${localWorkspaceFolderBasename}-${devcontainerId},target=/home/vscode/.local/state/herdr-core,type=bind,consistency=cached",
 
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
@@ -442,6 +442,9 @@
 		// let the container auto-destroy after it's closed
 		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
 		"--rm",
+		// stable container name, so 'hc machine add --via' keeps working
+		// after a rebuild; Docker allows only [a-zA-Z0-9][a-zA-Z0-9_.-]+
+		"--name", "${localWorkspaceFolderBasename}-${devcontainerId}",
 		// vnc for desktop-lite feature
 		// "--shm-size=1g",
 	]

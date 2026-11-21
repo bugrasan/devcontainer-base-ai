@@ -8,26 +8,32 @@
 ## herdr-core identity
 
 On each launch, `initializeCommand` sets up the herdr-core identity on the host.
-The template's `.gitignore` excludes both paths it creates in `.devcontainer/`.
 
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
   It holds a `uuidgen` UUID without dashes in lowercase.
-  A launch writes it if it is missing or not 32 hex characters.
-- `~/.config/herdr-core/container/<folder>-<machine-id>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
-  The folder name shows which project a state folder belongs to; the machine-id keeps projects with the same folder name apart.
+  A launch writes it if it is missing or not 32 hex characters, and the template's `.gitignore` excludes it.
+- `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
-- `.devcontainer/herdr-core-state` is a link to that folder, because `mounts` can't read the machine-id from the file
+- The container has the same name, `<folder>-<devcontainerId>`, so an `hc machine add --via` entry should keep working after a rebuild.
+  `docker ps` shows the name.
+
+`<devcontainerId>` is a 52-character hash of the project folder path and the `devcontainer.json` path.
+It stays the same across rebuilds and changes when you move or rename the project folder.
 
 With the machine-id and the state folder on the host, a recreated container should keep the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
-Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one identity.
-To start over, delete the id file and its state folder, and the next launch writes a new id.
+Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one machine-id.
+To start over, delete the id file and the state folder, and the next launch writes a new id.
 When you delete a project, delete its state folder too.
-When you rename the project folder, rename its state folder to match before the next launch, or the next container starts with empty state.
+When you move or rename the project folder, the next container gets a new, empty state folder.
+To keep the state, replace the new folder with the old one while the container is stopped.
+
+Docker allows only letters, digits, `_`, `.`, and `-` in a container name, and the first character must be a letter or digit.
+The project folder name has to follow that rule, because it is part of the container name.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
 
-The state mount's source is a link to `~/.config/herdr-core/`, so a Docker VM, such as Docker Desktop, colima, or Podman machine, must share that folder.
+The state folder is under `~/.config/herdr-core/`, so a Docker VM, such as Docker Desktop, colima, or Podman machine, must share that folder.
 After you update the template, run `docker pull ghcr.io/bugrasan/devcontainer-base-ai/base:latest`, because an older cached image may lack `~/.local/state/herdr-core`.
 
 ## LSP code intelligence
