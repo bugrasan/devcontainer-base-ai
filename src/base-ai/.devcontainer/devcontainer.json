@@ -433,6 +433,12 @@
 	"containerUser": "vscode",
 	"remoteUser": "vscode",
 
+	// Run an init process as PID 1 that forwards signals and reaps orphaned
+	// child processes: tini with Docker ('docker run --init'), catatonit with
+	// Podman ('podman run --init'). The 'base' image already sets it in its
+	// devcontainer.metadata label; uncomment it for an image without it.
+	// "init": true,
+
 	// Mount local .env file into the container
 	"runArgs": [
 		// .env file

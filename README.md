@@ -16,7 +16,7 @@ It ships Node, Python, AI coding agents, language servers, and common CLI tools.
 ## Usage
 
 The Template needs `~/.ssh/id_ed25519.pub` on the host.
-Both set `TZ=Europe/Zurich` and auto-approve VS Code agent tool calls and terminal commands.
+The Template and the root config set `TZ=Europe/Zurich` and auto-approve VS Code agent tool calls and terminal commands.
 
 Apply the Template to a project:
 
