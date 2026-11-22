@@ -22,7 +22,7 @@
 	// **IMPORTANT**: not from microsoft, as such no 'vscode' user added
 	// "image": "quay.io/toolbx/arch-toolbox:latest",
 
-	// Dockerfile.mcr-trixie + the Features below (including sshd, npm-packages,
+	// Dockerfile.mcr-trixie + the Features below (including npm-packages,
 	// claude-code, speckit, otel-collector-contrib), pre-baked and published
 	// every Saturday 06:54 UTC by .github/workflows/publish-base-image.yml
 	// (see .devcontainer/base/devcontainer.json for the build definition).
@@ -47,7 +47,9 @@
 		// 	"username": "vscode"
 		// },
 
-		// sshd is baked into the 'base' image (see .devcontainer/base/devcontainer.json).
+		// sshd is not in the 'base' image (see .devcontainer/base/devcontainer.json);
+		// uncomment it together with 'forwardPorts', the public key mount, and
+		// 'authorized-keys' below to use SSH.
 		// https://github.com/devcontainers/features/tree/main/src/sshd
 		// "ghcr.io/devcontainers/features/sshd:1": {},
 
@@ -135,17 +137,16 @@
 	// 		"label": "VNC desktop",
 	// 	}
 	// },
-	// this is for sshd (baked into the 'base' image on port 2222 - see
-	// .devcontainer/base/devcontainer.json); VS Code still needs this declared here
-	// since port forwarding is evaluated wherever the container is opened, not baked
-	// into the image
-	"forwardPorts": [2222],
-	"portsAttributes": {
-		"2222": {
-			"label": "SSH",
-			"onAutoForward": "notify"
-		}
-	},
+	// for sshd on port 2222 - only with the sshd Feature above, which is not in
+	// the 'base' image; VS Code needs this declared here since port forwarding is
+	// evaluated wherever the container is opened, not baked into the image
+	// "forwardPorts": [2222],
+	// "portsAttributes": {
+	// 	"2222": {
+	// 		"label": "SSH",
+	// 		"onAutoForward": "notify"
+	// 	}
+	// },
 	// Alternative to 'forwardPorts' above: a real Docker port publish (host:container),
 	// so `ssh -p 2222 vscode@localhost` works even without an active VS Code Dev
 	// Containers session (forwardPorts is a dynamic tunnel that only exists while a
@@ -204,7 +205,8 @@
 
 		// !!! SSH keys are sensitive, so they should be read-only and cached for better performance
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
-		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+		// public key for sshd's authorized_keys - only with the sshd Feature above
+		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 
 		// Claude Code CLI needs to write to these files, so they cannot be read-only
 		// "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
@@ -230,13 +232,9 @@
 		// Feature), Pylance (python Feature's VS Code extension).
 		"ENABLE_LSP_TOOL": "1",
 
-		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already
-		// defaults SSHD_PORT to 2222 and auto-starts sshd on every container start via
-		// its own baked entrypoint (see .devcontainer/base/devcontainer.json), and
-		// setting them here would have no effect anyway - the Feature's install.sh only
-		// reads them once, when the 'base' image is built, not when a container is
-		// later started from it. 'forwardPorts'/'portsAttributes' above must still match
-		// whatever port is baked in (2222 by default).
+		// SSHD_PORT/START_SSHD are omitted: the sshd Feature is not in the 'base'
+		// image. If you uncomment it above, 'forwardPorts'/'portsAttributes' must
+		// match the port sshd listens on (2222 by default).
 		// set random password
 		// "NEW_PASSWORD": "random",
 
@@ -311,7 +309,8 @@
 		"revoke-vscode-sockets": "find /tmp -maxdepth 2 \\( -name 'vscode-ssh-auth-*.sock' -o -name 'vscode-remote-containers-ipc-*.sock' -o -name 'vscode-remote-containers-*.js' \\) -delete 2>/dev/null || true && echo '11-revoke-vscode-sockets' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode/issues/324870
-		"authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
+		// only with the sshd Feature and the public key mount above
+		// "authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
 
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",

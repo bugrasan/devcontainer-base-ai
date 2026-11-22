@@ -26,6 +26,11 @@
 			"upgradePackages": false,
 		},
 
+		// https://github.com/devcontainers/features/tree/main/src/sshd
+		// Not baked in: its openssh-server pulls in systemd, which fills the empty
+		// /etc/machine-id with a random id that every container would then share.
+		// "ghcr.io/devcontainers/features/sshd:1": {},
+
 		// https://github.com/devcontainers/features/blob/main/src/node/
 		// nodeGypDependencies/pnpmVersion explicitly disabled: their defaults (true /
 		// "latest") pull in a full C/C++ build toolchain and pnpm, neither of which
