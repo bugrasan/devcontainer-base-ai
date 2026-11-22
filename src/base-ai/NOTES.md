@@ -13,7 +13,8 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
   It holds a `uuidgen` UUID without dashes in lowercase.
   A launch writes it if it is missing or not 32 hex characters, and `.devcontainer/.gitignore` excludes it.
 - `.devcontainer/herdr-labels` holds `herdr-machine-id=<machine-id>`, which `runArgs` passes to Docker as a container label.
-  To find a project's container, run `docker ps --filter "label=herdr-machine-id=<machine-id>"`.
+  `.devcontainer/.gitignore` excludes it too.
+  To find a project's container, run `docker ps --filter "label=$(cat .devcontainer/herdr-labels)"` in the project folder.
 - `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 
@@ -26,6 +27,13 @@ To start over, delete the id file and the state folder, and the next launch writ
 When you delete a project, delete its state folder too.
 When you move or rename the project folder, the next container gets a new, empty state folder, while the machine-id and the label stay the same.
 To keep the state, replace the new folder with the old one while the container is stopped.
+
+Docker gives each new container a random name, so an `hc` machine entry can't point at a fixed name.
+Instead, its `--via` command can look the container up by the label on each connection (untested):
+
+```bash
+hc machine add --name <name> --via 'docker exec -i $(docker ps -q --filter label=herdr-machine-id=<machine-id>) sh -c'
+```
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
