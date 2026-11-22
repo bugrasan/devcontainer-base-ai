@@ -15,7 +15,7 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
 - `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 - The container is named `devc-<devcontainerId>`, so an `hc machine add --via` entry should keep working after a rebuild.
-  To find a project's container, run `docker ps --filter label=devcontainer.local_folder=<project path>`; its state folder ends with the same id.
+  To find a project's container, run `docker ps --filter "label=devcontainer.local_folder=<project path>"`; its state folder ends with the same id.
 
 `<devcontainerId>` is a 52-character hash of the project folder path and the `devcontainer.json` path.
 It stays the same across rebuilds and changes when you move or rename the project folder.
