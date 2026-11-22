@@ -154,9 +154,9 @@
 	// to switch to this instead.
 	// "appPort": ["127.0.0.1:${templateOption:sshdPort}:${templateOption:sshdPort}"],
 
-	// Runs on the HOST before the container starts — ensures the .worktrees sibling folder exists.
 	// initializeCommand runs on the HOST before the container starts.
-	// Must be a string (not array) so it runs through /bin/sh -c.
+	// Each entry is a string, so it runs through /bin/sh -c. The entries run
+	// in parallel, so none may depend on another.
 	"initializeCommand": {
 		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
 		// Inside the container /workspaces/ is not writable by the vscode user, so we bind-mount
@@ -164,6 +164,14 @@
 		"worktrees": "mkdir -p \"${localWorkspaceFolder}.worktrees\"",
 		// .env file fix - see also variable 'runArgs'
 		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
+		// herdr-core: a stable machine-id and state dir keep the core identity
+		// when the container is recreated (herdr-core issue #304). Writes a
+		// uuidgen UUID (no dashes, lowercase) unless a valid id exists.
+		// Needs uuidgen.
+		"herdr-machine-id": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1",
+		// herdr-core: host state dir, mounted in 'mounts'; mode 700, since the
+		// state holds terminal output, which may contain secrets
+		"herdr-core-state": "c=\"${localEnv:HOME}/.config/herdr-core\"; d=\"$c/container/${localWorkspaceFolderBasename}-${devcontainerId}\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\"",
 		// **IMPORTANT** deletes the named docker volume; usually mounted as ~/
 		// uncomment for a single rebuild then comment it out again
 		//"wipeVolume": "docker volume rm -f DevContVol-${devcontainerId} 2>/dev/null || true",
@@ -187,6 +195,12 @@
 
 		// Git worktrees: VS Code creates <project>.worktrees/ next to the workspace folder.
 		"source=${localWorkspaceFolder}.worktrees,target=${containerWorkspaceFolder}.worktrees,type=bind,consistency=cached",
+
+		// herdr-core: machine-id and state dir come from the host (see
+		// 'initializeCommand'), so a recreated container (see '--rm' in
+		// 'runArgs') keeps the core identity
+		"source=${localWorkspaceFolder}/.devcontainer/herdr-machine-id,target=/etc/machine-id,type=bind,readonly,consistency=cached",
+		"source=${localEnv:HOME}/.config/herdr-core/container/${localWorkspaceFolderBasename}-${devcontainerId},target=/home/vscode/.local/state/herdr-core,type=bind,consistency=cached",
 
 		// ${localEnv:HOME} on Linux/macOS
 		// ${localEnv:USERPROFILE} on Windows
