@@ -11,6 +11,12 @@
 		"dockerfile": "Dockerfile.mcr-trixie"
 	},
 
+	// Run an init process (tini, via 'docker run --init') as PID 1, so it
+	// reaps orphaned child processes such as those of background tools.
+	// Stored in the image's devcontainer.metadata label, so every
+	// devcontainer.json that uses this image inherits it.
+	"init": true,
+
 	// Same Features as the root devcontainer.json, baked into the image at build time.
 	"features": {
 		// https://github.com/devcontainers/features/blob/main/src/common-utils/
@@ -19,11 +25,6 @@
 			// already done in container
 			"upgradePackages": false,
 		},
-
-		// https://github.com/devcontainers/features/tree/main/src/sshd
-		// SSHD_PORT/START_SSHD default to 2222/false in the Feature itself, which is
-		// what we want - see root ../devcontainer.json's 'forwardPorts' comment.
-		"ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/blob/main/src/node/
 		// nodeGypDependencies/pnpmVersion explicitly disabled: their defaults (true /
