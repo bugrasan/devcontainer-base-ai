@@ -12,9 +12,6 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
   It holds a `uuidgen` UUID without dashes in lowercase.
   A launch writes it if it is missing or not 32 hex characters, and `.devcontainer/.gitignore` excludes it.
-- `.devcontainer/herdr-labels` holds `herdr-machine-id=<machine-id>`, which `runArgs` passes to Docker as a container label.
-  `.devcontainer/.gitignore` excludes it too.
-  To find a project's container, run `docker ps --filter "label=$(cat .devcontainer/herdr-labels)"` in the project folder.
 - `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
 
@@ -24,15 +21,17 @@ It stays the same across rebuilds and changes when you move or rename the projec
 With the machine-id and the state folder on the host, a recreated container should keep the herdr-core identity ([herdr-core issue #304](https://github.com/herdrdev/herdr-core/issues/304)).
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one machine-id.
 To start over, delete the id file and the state folder, and the next launch writes a new id.
+Deleting only the id file keeps the old state folder, because its name uses `<devcontainerId>`, not the machine-id.
 When you delete a project, delete its state folder too.
-When you move or rename the project folder, the next container gets a new, empty state folder, while the machine-id and the label stay the same.
+When you move or rename the project folder, the next container gets a new, empty state folder, while the machine-id stays the same.
 To keep the state, replace the new folder with the old one while the container is stopped.
 
-Docker gives each new container a random name, so an `hc` machine entry can't point at a fixed name.
-Instead, its `--via` command can look the container up by the label on each connection (untested):
+Docker gives each new container a random name.
+To find a project's container, use the label the devcontainer CLI sets (untested with the VS Code extension): `docker ps --filter "label=devcontainer.local_folder=<project path>"`.
+An `hc` machine entry can't point at a fixed name, but its `--via` command can look the container up by that label on each connection (untested):
 
 ```bash
-hc machine add --name <name> --via 'docker exec -i $(docker ps -q --filter label=herdr-machine-id=<machine-id>) sh -c'
+hc machine add --name <name> --via 'docker exec -i $(docker ps -q --filter label=devcontainer.local_folder=<project path>) sh -c'
 ```
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.

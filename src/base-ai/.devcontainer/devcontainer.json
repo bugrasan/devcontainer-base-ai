@@ -166,9 +166,9 @@
 		"env-file": "touch \"${localWorkspaceFolder}/.env\"",
 		// herdr-core: a stable machine-id and state dir keep the core identity
 		// when the container is recreated (herdr-core issue #304). Writes a
-		// uuidgen UUID (no dashes, lowercase) unless a valid id exists, and
-		// the label file herdr-labels for 'runArgs'. Needs uuidgen.
-		"herdr-machine-id": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1; printf 'herdr-machine-id=%s\\n' \"$id\" > \"${localWorkspaceFolder}/.devcontainer/herdr-labels\"",
+		// uuidgen UUID (no dashes, lowercase) unless a valid id exists.
+		// Needs uuidgen.
+		"herdr-machine-id": "f=\"${localWorkspaceFolder}/.devcontainer/herdr-machine-id\"; valid_id() { id=$(cat \"$f\" 2>/dev/null); case $id in *[!0-9a-f]*) return 1;; esac; printf '%s\\n' \"$id\" | grep -qx '[0-9a-f]\\{32\\}'; }; valid_id || uuidgen | tr -d '-' | tr '[:upper:]' '[:lower:]' > \"$f\"; valid_id || exit 1",
 		// herdr-core: host state dir, mounted in 'mounts'; mode 700, since the
 		// state holds terminal output, which may contain secrets
 		"herdr-core-state": "c=\"${localEnv:HOME}/.config/herdr-core\"; d=\"$c/container/${localWorkspaceFolderBasename}-${devcontainerId}\"; mkdir -p \"$d\" && chmod 700 \"$c\" \"$d\"",
@@ -442,10 +442,6 @@
 		// let the container auto-destroy after it's closed
 		// https://github.com/microsoft/vscode-remote-release/issues/3512#issuecomment-1018286415
 		"--rm",
-		// label herdr-machine-id=<machine-id> (file written by
-		// 'initializeCommand'), so the container can be found by its herdr
-		// identity: docker ps --filter label=herdr-machine-id=<machine-id>
-		"--label-file", "${localWorkspaceFolder}/.devcontainer/herdr-labels",
 		// vnc for desktop-lite feature
 		// "--shm-size=1g",
 	]

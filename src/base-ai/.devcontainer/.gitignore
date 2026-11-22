@@ -1,4 +1,3 @@
-# herdr-core machine-id and its label file, written by initializeCommand: one
-# per checkout and confidential (machine-id(5)); travels with .devcontainer/
+# herdr-core machine-id, written by initializeCommand: one per checkout and
+# confidential (machine-id(5)); this file travels with .devcontainer/
 /herdr-machine-id
-/herdr-labels
