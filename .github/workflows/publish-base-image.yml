@@ -186,8 +186,6 @@ jobs:
             echo "✓ ~/.local/state/herdr-core owned by the user, mode 700 (herdr-core state mount)"
             test -f /etc/machine-id && ! test -s /etc/machine-id || exit 1
             echo "✓ /etc/machine-id is an empty file"
-            # sshd checks: re-enable together with the sshd Feature in
-            # .devcontainer/base/devcontainer.json
             # command -v sshd || exit 1
             # echo "✓ sshd found"
             # grep -qx "Port 2222" /etc/ssh/sshd_config || exit 1

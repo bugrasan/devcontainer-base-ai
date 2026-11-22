@@ -27,8 +27,8 @@
 		},
 
 		// https://github.com/devcontainers/features/tree/main/src/sshd
-		// Not baked in: its openssh-server pulls in systemd, which fills the empty
-		// /etc/machine-id with a random id that every container would then share.
+		// SSHD_PORT/START_SSHD default to 2222/false in the Feature itself, which is
+		// what we want - see root ../devcontainer.json's 'forwardPorts' comment.
 		// "ghcr.io/devcontainers/features/sshd:1": {},
 
 		// https://github.com/devcontainers/features/blob/main/src/node/
