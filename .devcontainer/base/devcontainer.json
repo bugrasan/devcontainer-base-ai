@@ -14,7 +14,8 @@
 	// Run an init process (tini, via 'docker run --init') as PID 1, so it
 	// reaps orphaned child processes such as those of background tools.
 	// Stored in the image's devcontainer.metadata label, so every
-	// devcontainer.json that uses this image inherits it.
+	// devcontainer.json that uses this image inherits it and can't turn it
+	// off: the CLI enables init if any metadata entry sets it.
 	"init": true,
 
 	// Same Features as the root devcontainer.json, baked into the image at build time.
