@@ -12,10 +12,10 @@ On each launch, `initializeCommand` sets up the herdr-core identity on the host.
 - `.devcontainer/herdr-machine-id` is mounted read-only as `/etc/machine-id`.
   It holds a `uuidgen` UUID without dashes in lowercase.
   A launch writes it if it is missing or not 32 hex characters, and `.devcontainer/.gitignore` excludes it.
+- `.devcontainer/herdr-labels` holds `herdr-machine-id=<machine-id>`, which `runArgs` passes to Docker as a container label.
+  To find a project's container, run `docker ps --filter "label=herdr-machine-id=<machine-id>"`.
 - `~/.config/herdr-core/container/<folder>-<devcontainerId>/` on the host is mounted as `~/.local/state/herdr-core`, the herdr-core state directory.
   It holds terminal output, which may contain secrets, so it has mode 700 and stays outside the project.
-- The container is named `devc-<devcontainerId>`, so an `hc machine add --via` entry should keep working after a rebuild.
-  To find a project's container, run `docker ps --filter "label=devcontainer.local_folder=<project path>"`; its state folder ends with the same id.
 
 `<devcontainerId>` is a 52-character hash of the project folder path and the `devcontainer.json` path.
 It stays the same across rebuilds and changes when you move or rename the project folder.
@@ -24,10 +24,8 @@ With the machine-id and the state folder on the host, a recreated container shou
 Don't copy `.devcontainer/herdr-machine-id` to another project, or both projects share one machine-id.
 To start over, delete the id file and the state folder, and the next launch writes a new id.
 When you delete a project, delete its state folder too.
-When you move or rename the project folder, the next container gets a new, empty state folder and a new name.
-To keep the state, replace the new folder with the old one while the container is stopped, then add the `hc` machine entry again.
-
-If Docker reports that the container name is already in use, the previous container is still being removed; wait a moment and reopen.
+When you move or rename the project folder, the next container gets a new, empty state folder, while the machine-id and the label stay the same.
+To keep the state, replace the new folder with the old one while the container is stopped.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
