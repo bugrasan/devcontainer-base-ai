@@ -31,8 +31,11 @@ To find a project's container, use the label the devcontainer CLI sets (untested
 An `hc` machine entry can't point at a fixed name, but its `--via` command can look the container up by that label on each connection (untested):
 
 ```bash
-hc machine add --name <name> --via 'docker exec -i $(docker ps -q --filter label=devcontainer.local_folder=<project path>) sh -c'
+hc machine add --name <name> --via 'docker exec -i $(docker ps -q --filter "label=devcontainer.local_folder=<project path>") sh -c'
 ```
+
+The inner double quotes keep a project path with spaces together; a path with a single quote doesn't work in this form.
+If the project has more than one dev container config, add `--filter "label=devcontainer.config_file=<path to devcontainer.json>"` to both commands, so only one container matches.
 
 The host needs `uuidgen`; on Ubuntu, the `uuid-runtime` package provides it.
 Without it, the launch fails until you install it.
