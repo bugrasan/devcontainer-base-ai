@@ -100,8 +100,9 @@
 		"ghcr.io/bugrasan/devcontainers-features/superfile:1": {},
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
-		// Installs the herdr TUI ('herdr') and herdr-core ('hc') with upstream's
-		// official install scripts, so the build needs herdr.dev, github.com,
+		// Installs the herdr TUI ('herdr') and herdr-core ('hc') by running
+		// upstream's official install scripts unchanged, as the remote user, into
+		// ~/.local/bin, which is not on PATH. The build needs herdr.dev, github.com,
 		// release-assets.githubusercontent.com, releases.herdr.dev and
 		// raw.githubusercontent.com. The herdr TUI is always the latest
 		// release; the weekly no-cache rebuild picks up new ones. Nothing is
@@ -115,6 +116,6 @@
 		// skill is off by default. The herdr-core skill is NOT inert: it matches
 		// sub-agent and background-task work, and outside an hc terminal it asks
 		// the user once per session whether to use hc.
-		"ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
+		"ghcr.io/bugrasan/devcontainers-features/herdr:3": {}
 	}
 }
