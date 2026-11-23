@@ -119,7 +119,7 @@
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
 		// Uncomment only if you swap the 'image' above for one without it baked in.
-		// "ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
+		// "ghcr.io/bugrasan/devcontainers-features/herdr:3": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
