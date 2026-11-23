@@ -102,7 +102,8 @@
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
 		// Installs the herdr TUI ('herdr') and herdr-core ('hc') by running
 		// upstream's official install scripts unchanged, as the remote user, into
-		// ~/.local/bin, which is not on PATH. The build needs herdr.dev, github.com,
+		// ~/.local/bin (on PATH via Dockerfile.mcr-trixie). The build needs
+		// herdr.dev, github.com,
 		// release-assets.githubusercontent.com, releases.herdr.dev and
 		// raw.githubusercontent.com. The herdr TUI is always the latest
 		// release; the weekly no-cache rebuild picks up new ones. Nothing is
