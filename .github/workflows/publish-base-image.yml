@@ -172,11 +172,12 @@ jobs:
             command -v claude || exit 1
             echo "✓ claude found"
             claude --version
-            # herdr 3 installs to ~/.local/bin, which is not on PATH
-            "$HOME/.local/bin/herdr" --version || exit 1
+            command -v herdr || exit 1
             echo "✓ herdr found"
-            "$HOME/.local/bin/herdr-core" --version || exit 1
+            herdr --version
+            command -v herdr-core || exit 1
             echo "✓ herdr-core found"
+            herdr-core --version
             test -f "$HOME/.claude/skills/herdr-core/SKILL.md" || exit 1
             test -f "$HOME/.copilot/skills/herdr-core/SKILL.md" || exit 1
             echo "✓ herdr-core skill baked in for claude and copilot"
