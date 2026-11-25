@@ -1,6 +1,7 @@
 # hadolint global ignore=DL3003,DL3004,DL3008,DL3016,DL3064
-# Ignored: sudo (MCR user is vscode), cd (scripts), unpinned apt/npm (newest
-# versions by design), ARG USERNAME (not a secret).
+# DL3004 sudo: the MCR user is vscode. DL3003 cd: inside scripts. DL3008,
+# DL3016: apt and npm take the newest versions by design. DL3064: the
+# USER_* ARG names are not secrets.
 FROM mcr.microsoft.com/devcontainers/base:trixie
 
 ARG USERNAME=vscode
@@ -57,9 +58,9 @@ RUN mkdir -p /home/${USERNAME}/.vscode-server/data/User \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-# ~/.local/bin holds uv, claude, specify, herdr and the uv tools. It must be on
-# PATH for non-login shells too (docker run image bash -c), and the
-# installers only edit rc files. nvm and Python links come after it.
+# ~/.local/bin (uv, claude, specify, herdr, uv tools) must be on PATH for
+# non-login shells too (docker run image bash -c): the installers only edit
+# rc files. The next ENV puts the Python links and node in front of it.
 ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
 ENV NVM_DIR=/usr/local/share/nvm \
     NVM_SYMLINK_CURRENT=true \
@@ -67,19 +68,14 @@ ENV NVM_DIR=/usr/local/share/nvm \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN <<EOF
-#!/bin/bash
-set -eo pipefail
-curl -fsSL https://astral.sh/uv/install.sh | sh
-rm -rf "${HOME}/.cache"/*
-EOF
+RUN curl -fsSL https://astral.sh/uv/install.sh | sh
 
 # Feature: otel-collector-contrib (autoStart false, so no start hook),
 # copilot-cli and github-cli. curl, ca-certificates, gnupg2, dirmngr,
 # apt-transport-https, tar, git: in MCR base (common-utils, git Feature), so
-# no apt step and no wget. Each archive is checked against the SHA-256 list
-# of its release.
-RUN <<EOF
+# no apt step and no wget. Each download is checked against the SHA-256
+# checksums published with its release.
+RUN <<'EOF'
 #!/bin/bash
 set -eo pipefail
 arch=$(dpkg --print-architecture)
@@ -92,21 +88,21 @@ latest() {
         "https://github.com/$1/releases/latest" | sed 's|.*/||'
 }
 fetch() { curl -fsSLO --retry 3 "https://github.com/$1/releases/download/$2/$3"; }
-# Check file $1 against the hash for it in list $2 (a one-hash file works too).
+# Check file $1 against its line in the checksum list $2. Fail if absent.
 verify() {
     local want
     want=$(grep -F -- "$1" "$2" | awk 'NR==1 {print $1}' || true)
-    [ -n "${want}" ] || want=$(awk 'NR==1 {print $1}' "$2")
+    [ -n "${want}" ] || { echo "no checksum for $1 in $2" >&2; exit 1; }
     printf '%s  %s\n' "${want}" "$1" | sha256sum -c -
 }
 
-# otelcol-contrib: upstream publishes one .sha256 file per archive.
+# otelcol-contrib: one .sha256 file per archive, holding only the hash.
 repo=open-telemetry/opentelemetry-collector-releases
 tag=$(latest "${repo}")
 f=otelcol-contrib_${tag#v}_linux_${arch}.tar.gz
 fetch "${repo}" "${tag}" "${f}"
 fetch "${repo}" "${tag}" "${f}.sha256"
-verify "${f}" "${f}.sha256"
+printf '%s  %s\n' "$(cat "${f}.sha256")" "${f}" | sha256sum -c -
 tar -xzf "${f}" otelcol-contrib
 sudo install -m 0755 otelcol-contrib /usr/local/bin/otelcol-contrib
 sudo install -d /etc/otelcol-contrib
@@ -166,15 +162,21 @@ rm -rf "${tmp}"
 EOF
 
 # Feature: node 24 via nvm, python os-provided, npm-packages.
-# node: curl, ca-certificates, tar, gnupg2, dirmngr, apt-transport-https are
-# in MCR base; libatomic1 comes with build-essential (gcc, git Feature).
-# python: only python3, pip and venv. Python tools use uv, not pipx; add
-# pipx (apt) or use uv tool when something needs it. npm and uv caches
-# are cleaned in this layer.
-RUN <<EOF
+# In MCR base already: curl, ca-certificates, tar, gnupg2, dirmngr, apt-
+# transport-https. Added: libatomic1 (node), python3, pip, venv (no pipx).
+# Python tools use uv; for pipx add apt pipx or use uv tool.
+# The npm and uv caches are cleaned in this layer.
+RUN <<'EOF'
 #!/bin/bash
 set -eo pipefail
 user=$(id -un)
+
+# apt: node needs libatomic1; python3 with pip and venv only.
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+    libatomic1 python3 python3-pip python3-venv
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
 
 # node: nvm dir writable by the user and the nvm group, as the Feature does.
 sudo groupadd -r nvm
@@ -195,7 +197,9 @@ nvm use default
 corepack enable
 nvm clear-cache
 umask 0022
-sudo tee -a /etc/bash.bashrc /etc/zsh/zshrc >/dev/null <<'RC'
+rc_files=(/etc/bash.bashrc)
+if [ -d /etc/zsh ]; then rc_files+=(/etc/zsh/zshrc); fi
+sudo tee -a "${rc_files[@]}" >/dev/null <<'RC'
 export NVM_DIR="/usr/local/share/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
@@ -205,11 +209,7 @@ echo "export PATH=/usr/local/python/current/bin:/usr/local/share/nvm/current/bin
     | sudo tee /etc/profile.d/00-restore-env.sh >/dev/null
 sudo chmod +x /etc/profile.d/00-restore-env.sh
 
-# python: Debian's python3, with the /usr/local/python/current links.
-sudo apt-get update
-sudo apt-get install -y --no-install-recommends python3 python3-pip python3-venv
-sudo apt-get clean
-sudo rm -rf /var/lib/apt/lists/*
+# python: links in /usr/local/python/current/bin, as the Feature makes them.
 sudo install -d /usr/local/python/current/bin
 for l in python3 python; do
     sudo ln -sf /usr/bin/python3 "/usr/local/python/current/bin/${l}"
@@ -233,7 +233,7 @@ EOF
 
 # Feature: claude-code (native installer, then the LSP plugins) and speckit
 # (newest X.Y.Z release tag of github/spec-kit). git is in MCR base.
-RUN <<EOF
+RUN <<'EOF'
 #!/bin/bash
 set -eo pipefail
 curl -fsSL https://claude.ai/install.sh | bash -s -- latest
@@ -253,7 +253,7 @@ EOF
 # Feature: superfile, lsp-config, herdr 3.0.0.
 # superfile: release archive checked against its published checksums file.
 # herdr and herdr-core: upstream installers, unchanged, into ~/.local/bin.
-RUN <<EOF
+RUN <<'EOF'
 #!/bin/bash
 set -eo pipefail
 arch=$(dpkg --print-architecture)
@@ -268,7 +268,8 @@ sums=superfile-${tag}-checksums.txt
 for a in "${f}" "${sums}"; do
     curl -fsSLO --retry 3 "https://github.com/${repo}/releases/download/${tag}/${a}"
 done
-want=$(grep -F -- "${f}" "${sums}" | awk 'NR==1 {print $1}')
+want=$(grep -F -- "${f}" "${sums}" | awk 'NR==1 {print $1}' || true)
+[ -n "${want}" ] || { echo "no checksum for ${f} in ${sums}" >&2; exit 1; }
 printf '%s  %s\n' "${want}" "${f}" | sha256sum -c -
 mkdir x
 tar --warning=no-unknown-keyword -xzf "${f}" -C x

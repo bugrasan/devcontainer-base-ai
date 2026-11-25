@@ -68,6 +68,8 @@ done
 
 # --- home folders and uv -----------------------------------------------------
 check "home .vscode-server/data/User" test -d ~/.vscode-server/data/User
+check "machine-id empty" test ! -s /etc/machine-id
+check "home herdr-core state mode 700" [ "$(stat -c %a ~/.local/state/herdr-core)" = 700 ]
 check "home .ssh mode 700" [ "$(stat -c %a ~/.ssh)" = 700 ]
 check "home .local owner" owned ~/.local vscode
 check "home .cache owner" owned ~/.cache vscode
@@ -116,12 +118,16 @@ check "spf" test -x /usr/local/bin/spf
 check "bat link to batcat" link_to /usr/local/bin/bat /usr/bin/batcat
 check "superfile config" file_has ~/.config/superfile/config.toml 'auto_check_update = false'
 check "superfile bat preview" file_has ~/.config/superfile/config.toml 'code_previewer = "bat"'
+check "superfile partial config" file_has ~/.config/superfile/config.toml 'ignore_missing_fields = true'
+check "superfile nerdfont off" file_has ~/.config/superfile/config.toml 'nerdfont = false'
 check "herdr" test -x ~/.local/bin/herdr
 check "herdr-core" test -x ~/.local/bin/herdr-core
 check "hc is herdr-core" link_to "$(command -v hc)" ~/.local/bin/herdr-core
 check "herdr bash completion" test -f /usr/share/bash-completion/completions/herdr
 check "herdr zsh completion" test -f /usr/local/share/zsh/site-functions/_herdr
 check "herdr config" file_has ~/.config/herdr/config.toml 'onboarding = false'
+check "herdr version_check off" file_has ~/.config/herdr/config.toml 'version_check = false'
+check "herdr manifest_check off" file_has ~/.config/herdr/config.toml 'manifest_check = false'
 check "herdr-core skill claude" test -f ~/.claude/skills/herdr-core/SKILL.md
 check "herdr-core skill copilot" test -f ~/.copilot/skills/herdr-core/SKILL.md
 check "copilot lsp-config" file_has ~/.copilot/lsp-config.json pyright-langserver
@@ -147,7 +153,6 @@ ver debian cat /etc/debian_version
 ver git git --version
 ver node node --version
 ver npm npm --version
-ver yarn yarn --version
 ver python3 python3 --version
 ver uv uv --version
 ver gh gh --version

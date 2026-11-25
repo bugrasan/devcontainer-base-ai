@@ -45,3 +45,4 @@ docker save base-features | gzip | wc -c
 - No Python dev packages (`python3-dev`, `python3-tk`, `python3-doc`, build libraries), so `python3-config` and `Python.h` are absent
 - No otel start hook (autoStart is off anyway), no Copilot CLI auto-update flag, no `/usr/local/bin` links for `claude` and `specify` (`~/.local/bin` is on PATH)
 - Python tools, claude, specify, herdr, and hc live in `~/.local/bin`; the Python tool set also has pylint
+- Vendor installers (uv, nvm, claude, herdr) run via `curl | sh` over HTTPS without a pin or checksum, as in the Features: accepted risk
