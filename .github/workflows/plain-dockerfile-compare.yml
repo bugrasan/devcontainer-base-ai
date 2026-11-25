@@ -1,0 +1,97 @@
+name: plain-dockerfile-compare
+
+on:
+  push:
+    branches: [claude/compassionate-lamport-y89ivp]
+    paths:
+      - 'experiments/plain-dockerfile/**'
+      - '.github/workflows/plain-dockerfile-compare.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      # Fetch the repository sources
+      - uses: actions/checkout@v7
+
+      # Build the plain Dockerfile image and time it
+      - name: Plain build
+        run: |
+          mkdir -p out
+          start=$(date +%s)
+          docker build --no-cache --pull -t base-plain experiments/plain-dockerfile
+          end=$(date +%s)
+          echo $((end - start)) > out/base-plain.seconds
+
+      # Build the Feature-based image with the devcontainer CLI and time it
+      - name: Feature build
+        run: |
+          npm install -g @devcontainers/cli
+          docker pull mcr.microsoft.com/devcontainers/base:trixie
+          start=$(date +%s)
+          devcontainer build --workspace-folder . \
+            --config .devcontainer/base/devcontainer.json \
+            --image-name base-features --no-cache
+          end=$(date +%s)
+          echo $((end - start)) > out/base-features.seconds
+
+      # Run the smoke test in the Feature image without network
+      - name: Smoke test base-features
+        continue-on-error: true
+        run: |
+          docker run --rm -i --network none base-features bash -s \
+            < experiments/plain-dockerfile/smoke-test.sh > out/base-features.txt
+
+      # Run the smoke test in the plain image without network
+      - name: Smoke test base-plain
+        continue-on-error: true
+        run: |
+          docker run --rm -i --network none base-plain bash -s \
+            < experiments/plain-dockerfile/smoke-test.sh > out/base-plain.txt
+
+      # Compare both smoke outputs and show failures
+      - name: Compare smoke tests
+        run: |
+          diff out/base-features.txt out/base-plain.txt || true
+          for i in base-features base-plain; do
+            echo "== FAIL lines in $i"
+            grep -i 'FAIL' out/$i.txt || true
+          done
+
+      # Collect size, layer and history metrics for both images
+      - name: Metrics
+        run: |
+          for i in base-features base-plain; do
+            docker image inspect -f '{{.Size}}' $i > out/$i.size
+            docker image inspect -f '{{len .RootFS.Layers}}' $i > out/$i.layers
+            docker save $i | gzip -1 | wc -c > out/$i.gzip
+            docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' $i \
+              | cut -c1-140 > out/$i.history.txt
+            echo "== history $i"
+            cat out/$i.history.txt
+          done
+
+      # Write the metrics table to the summary and the log
+      - name: Summary
+        run: |
+          {
+            echo "| image | build s | size bytes | layers | gzip bytes | pass | fail |"
+            echo "|---|---|---|---|---|---|---|"
+            for i in base-features base-plain; do
+              p=$(grep -ci 'PASS' out/$i.txt || true)
+              f=$(grep -ci 'FAIL' out/$i.txt || true)
+              echo "| $i | $(cat out/$i.seconds) | $(cat out/$i.size) | $(cat out/$i.layers) | $(cat out/$i.gzip) | $p | $f |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Upload smoke outputs and history files
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare-output
+          path: |
+            out/*.txt
