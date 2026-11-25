@@ -115,7 +115,7 @@
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/herdr
 		// Uncomment only if you swap the 'image' above for one without it baked in.
-		// "ghcr.io/bugrasan/devcontainers-features/herdr:2": {}
+		// "ghcr.io/bugrasan/devcontainers-features/herdr:3": {}
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -139,13 +139,13 @@
 	// .devcontainer/base/devcontainer.json); VS Code still needs this declared here
 	// since port forwarding is evaluated wherever the container is opened, not baked
 	// into the image
-	"forwardPorts": [2222],
-	"portsAttributes": {
-		"2222": {
-			"label": "SSH",
-			"onAutoForward": "notify"
-		}
-	},
+	// "forwardPorts": [2222],
+	// "portsAttributes": {
+	// 	"2222": {
+	// 		"label": "SSH",
+	// 		"onAutoForward": "notify"
+	// 	}
+	// },
 	// Alternative to 'forwardPorts' above: a real Docker port publish (host:container),
 	// so `ssh -p 2222 vscode@localhost` works even without an active VS Code Dev
 	// Containers session (forwardPorts is a dynamic tunnel that only exists while a
@@ -204,7 +204,7 @@
 
 		// !!! SSH keys are sensitive, so they should be read-only and cached for better performance
 		// "source=${localEnv:HOME}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,type=bind,readonly,consistency=cached",
-		"source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
+		// "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,type=bind,readonly,consistency=cached",
 
 		// Claude Code CLI needs to write to these files, so they cannot be read-only
 		// "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
@@ -311,7 +311,7 @@
 		"revoke-vscode-sockets": "find /tmp -maxdepth 2 \\( -name 'vscode-ssh-auth-*.sock' -o -name 'vscode-remote-containers-ipc-*.sock' -o -name 'vscode-remote-containers-*.js' \\) -delete 2>/dev/null || true && echo '11-revoke-vscode-sockets' >> ~/devcontainer-post-create.txt",
 
 		// see https://github.com/microsoft/vscode/issues/324870
-		"authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
+		// "authorized-keys": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys || true && echo '12-authorized-keys' >> ~/devcontainer-post-create.txt",
 
 		// disable github telemetry
 		"github-cli-telemetry": "gh config set telemetry disabled || true && echo '13-github-cli-telemetry' >> ~/devcontainer-post-create.txt",
