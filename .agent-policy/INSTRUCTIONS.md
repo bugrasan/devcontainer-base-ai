@@ -29,6 +29,10 @@ Keep this folder outside the workspace you mount.
    ```bash
    docker compose exec agent claude
    ```
+   Open a shell in the proxy (read-only root, runs as UID 13):
+   ```bash
+   docker compose exec egress-proxy bash
+   ```
 7. Read the proxy log:
    ```bash
    docker compose logs egress-proxy
@@ -69,10 +73,16 @@ Keep this folder outside the workspace you mount.
    ```bash
    docker-compose -f cfg-01-compose.yaml -f cfg-01-compose-podman.yaml exec agent claude
    ```
+   Open a shell in the proxy (read-only root, runs as UID 13; needs `DOCKER_HOST` from step 1):
+   ```bash
+   docker-compose -f cfg-01-compose.yaml -f cfg-01-compose-podman.yaml exec egress-proxy bash
+   ```
 8. Stop and remove everything:
    ```bash
    docker-compose -f cfg-01-compose.yaml -f cfg-01-compose-podman.yaml down -v
    ```
+
+Shortcut: `./pm-comp build|up|ps|down` runs steps 4, 5, and 8 and a build-only run (see `./pm-comp --help`).
 
 ## Troubleshooting
 
