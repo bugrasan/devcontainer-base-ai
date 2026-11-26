@@ -1,0 +1,94 @@
+# CFG-01-compose: ARC-01 as one compose file – agent without network, Squid sidecar, Unix-socket bridge
+# Keep this folder outside the agent's workspace (WS); the agent could otherwise rewrite its own policy
+# Run as your normal user, never with sudo: the agent would otherwise run as UID 0
+name: ${P:-agent-a}
+
+# Shared hardening: no capabilities and no privilege gain (HRD-01, HRD-02)
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+# Proxy variables point at the agent's local bridge; empty values override host proxies (PIT-14)
+x-proxy-env: &proxy-env
+  HTTPS_PROXY: http://127.0.0.1:3128
+  https_proxy: http://127.0.0.1:3128
+  HTTP_PROXY: http://127.0.0.1:3128
+  http_proxy: http://127.0.0.1:3128
+  NO_PROXY: localhost,127.0.0.1,::1
+  no_proxy: localhost,127.0.0.1,::1
+  ALL_PROXY: ""
+  all_proxy: ""
+  FTP_PROXY: ""
+  ftp_proxy: ""
+  NODE_USE_ENV_PROXY: "1"
+  DISABLE_TELEMETRY: "1"
+  DISABLE_ERROR_REPORTING: "1"
+
+services:
+  # One-shot: hand the socket volume to Squid's UID 13; Docker has no :U volume option
+  socket-owner:
+    <<: *hardening
+    image: ${AGENT_IMAGE:-localhost/agent:1}
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    user: "0"
+    cap_add: [CHOWN]
+    network_mode: none
+    volumes:
+      - egress:/run/egress
+    command: ["chown", "13:13", "/run/egress"]
+    restart: "no"
+
+  # Squid sidecar: the only service with a network (the project's default network)
+  # socat links the socket file to Squid; wait -n ends the container when either dies,
+  # and the restart policy brings it back
+  egress-proxy:
+    <<: *hardening
+    image: ${SQUID_IMAGE:-localhost/squid:1}
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    user: "13:13"
+    read_only: true
+    tmpfs: [/tmp]
+    environment: *proxy-env
+    volumes:
+      - ./squid.conf:/config/squid.conf:ro
+      - egress:/run/egress
+    command:
+      - bash
+      - -c
+      - |
+        squid -N -f /config/squid.conf &
+        socat UNIX-LISTEN:/run/egress/http.sock,fork,mode=666,unlink-early TCP:127.0.0.1:3128 &
+        wait -n; exit 1
+    restart: unless-stopped
+    depends_on:
+      socket-owner:
+        condition: service_completed_successfully
+
+  # Agent: no network at all; socat turns its local proxy port into the socket file
+  agent:
+    <<: *hardening
+    image: ${AGENT_IMAGE:-localhost/agent:1}
+    user: "${AGENT_UID:-1000}:${AGENT_GID:-1000}"
+    network_mode: none
+    environment: *proxy-env
+    working_dir: /workspace
+    volumes:
+      - ${WS:?set WS to the absolute workspace path}:/workspace
+      - egress:/run/egress:ro
+    command:
+      - bash
+      - -c
+      - |
+        socat TCP-LISTEN:3128,bind=127.0.0.1,fork,reuseaddr UNIX-CONNECT:/run/egress/http.sock &
+        wait -n; exit 1
+    restart: unless-stopped
+    depends_on:
+      egress-proxy:
+        condition: service_started
+
+volumes:
+  egress: {}

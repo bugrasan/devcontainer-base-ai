@@ -1,0 +1,15 @@
+# Proxy sidecar (IMG-01): Squid plus socat on the Microsoft Debian base image.
+# Debian's `proxy` account is UID/GID 13, which the compose file relies on (IMG-04).
+FROM mcr.microsoft.com/devcontainers/base:trixie
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends squid socat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Fail the build if the UID assumption of IMG-04 does not hold
+RUN [ "$(id -u proxy)" = 13 ] && [ "$(id -g proxy)" = 13 ] && squid --version | head -1
+
+USER 13:13
