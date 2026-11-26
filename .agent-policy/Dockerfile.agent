@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # sudo is removed: the agent image ships no sudo or setuid helpers (HRD-02)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends socat dnsutils iproute2 xxd \
-    && apt-get purge -y sudo \
+    && SUDO_FORCE_REMOVE=yes apt-get purge -y sudo \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

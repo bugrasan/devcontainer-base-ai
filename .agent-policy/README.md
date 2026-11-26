@@ -48,3 +48,14 @@ docker compose down -v
 Untested: the handover marks CFG-01-compose as untested (S-02), and this environment had no container engine.
 Run AT-01 to AT-26 (handover section 12) on Docker and on Podman before relying on it.
 Open points that affect this build: IPv6 (OPEN-08), agent UID without an account (OPEN-15), and the `.codeberg.org` and LAN entries in `squid.conf`, which are placeholders.
+
+## Todo
+
+- Phase 2: test the `egress` volume as a tmpfs-backed named volume (SVC-14) via `driver_opts` `type: tmpfs`, `device: tmpfs`, `o: uid=13,gid=13`
+  - Goal: no stale `http.sock` after `down` without `-v`, and possibly no need for `socket-owner`
+  - Check on Docker and on rootless Podman: Podman documents mount options other than `uid`/`gid` as needing root privileges, so rootless tmpfs volumes may fail (unverified)
+  - Check that docker-compose passes the options through Podman's API socket (AT-26, OPEN-21)
+- Phase 3 or later (optional): hide the host username and home path that `mount` shows inside rootless Podman containers
+  - Cause: the overlay mount options (`lowerdir`, `upperdir`, `workdir`) list the host's Podman storage path under `~/.local/share/containers/storage`
+  - Option: set `graphroot` in `~/.config/containers/storage.conf` to a neutral path, or run the sandbox under a dedicated host user (untested)
+  - See `docs/dev-faq.md`
