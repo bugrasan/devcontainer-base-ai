@@ -242,8 +242,10 @@
 		// diagnostics via language servers instead of grep/read). Also baked into the
 		// 'base' image (Dockerfile ENV + the claude-code Feature's containerEnv); set
 		// here too so it still applies if you swap the base image for one without it.
-		// Language servers: pyright-langserver + typescript-language-server (npm-packages
-		// Feature), Pylance (python Feature's VS Code extension).
+		// Language servers (Claude Code and Copilot CLI plugins, see NOTES.md):
+		// bash, yaml, json, html, css, dockerfile, markdown (marksman), toml
+		// (taplo), pyright, and typescript (TypeScript 7's 'tsc --lsp'). VS Code
+		// uses its own extension servers instead (see 'extensions' below).
 		"ENABLE_LSP_TOOL": "1",
 
 		// SSHD_PORT/START_SSHD are omitted: the sshd Feature reads them only at
@@ -357,6 +359,8 @@
 				// "editor.formatOnSave": true,
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"telemetry.telemetryLevel": "off",
+				// Red Hat extensions (YAML) have their own telemetry switch.
+				"redhat.telemetry.enabled": false,
 
 				// see https://www.danieldemmel.me/blog/coding-agents-in-secured-vscode-dev-containers
 				"dev.containers.dockerCredentialHelper": false,
@@ -381,7 +385,8 @@
 				// tool - since v1.99; reference it as '#usages'. (NOT 'find_symbol',
 				// which is a Visual Studio 2026 tool, not a VS Code one.) Pylance
 				// (python extension) and VS Code's built-in TypeScript language features
-				// supply the symbol data; no third-party LSP extension needed.
+				// supply the symbol data for Python and TypeScript; the language
+				// support extensions below cover YAML, Bash, Dockerfile, and TOML.
 				"chat.agent.enabled": true,
 
 				// terminal tool auto approve settings
@@ -423,6 +428,12 @@
 
 				// mermaid
 				"bierner.markdown-mermaid",
+
+				// language support (VS Code uses its own extension servers, not the CLI agent plugins)
+				"redhat.vscode-yaml",
+				"mads-hartmann.bash-ide-vscode",
+				"docker.docker",
+				"tamasfe.even-better-toml",
 			],
 		},
 	},

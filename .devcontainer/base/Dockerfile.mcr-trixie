@@ -29,6 +29,7 @@ RUN apt-get update \
         pass \
         ripgrep \
         shellcheck \
+        shfmt \
         sudo \
         vim \
         vim-doc \
