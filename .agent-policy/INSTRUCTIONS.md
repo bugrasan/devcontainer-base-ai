@@ -82,10 +82,29 @@ Keep this folder outside the workspace you mount.
    docker-compose -f cfg-01-compose.yaml -f cfg-01-compose-podman.yaml down -v
    ```
 
-Shortcut: `./pm-comp build|up|ps|down` runs steps 4, 5, and 8 and a build-only run (see `./pm-comp --help`).
+Shortcut: `./pm-comp.sh build|up [--build]|ps|down|proxy-restart` (or `./pm-comp`) runs steps 4, 5, and 8, a build-only run, and the proxy restart of "Change the allowlist"; `up` builds only when you pass `--build` (see `./pm-comp.sh --help`).
+
+## Change the allowlist (`squid.conf`)
+
+The proxy mounts `squid.conf` read-only, so edit the file on the host; no rebuild is needed.
+
+1. Edit `squid.conf` in this folder.
+2. Check the file with a temporary container; a non-zero exit means a broken file (use `podman run --http-proxy=false` for Podman):
+   ```bash
+   docker run --rm --user 13:13 --cap-drop=ALL --security-opt=no-new-privileges \
+     -v "$PWD/squid.conf":/c.conf:ro localhost/squid:1 squid -k parse -f /c.conf
+   ```
+3. Restart only the proxy (Squid is not PID 1 here, so `kill -HUP 1` does not reload it):
+   ```bash
+   docker compose restart egress-proxy
+   ```
+   Podman: `./pm-comp.sh proxy-restart` runs steps 2 and 3 in one go.
+   Egress stops for a moment; the agent container keeps running.
+4. Check the new rule, for example with `tests/acceptance.sh`.
 
 ## Troubleshooting
 
 - `set WS to the absolute workspace path`: `WS` is missing in `.env`.
+  A relative `WS` would be read as a named volume, not your folder.
 - Files in the workspace have the wrong owner: check `AGENT_UID` (Docker) or the Podman override.
-- A site is blocked (403): add its hostname to `squid.conf`, then `docker compose restart egress-proxy`.
+- A site is blocked (403): add its hostname to `squid.conf` as described in "Change the allowlist".
