@@ -113,6 +113,9 @@ A project entry with the same server name overrides or removes the server from t
 Check the result with `copilot lsp list` in the project folder.
 For Claude Code, run `claude plugin disable <id>-lsp@base-ai-lsp --scope project` in the project folder.
 It writes `"enabledPlugins": {"<id>-lsp@base-ai-lsp": false}` to the project's `.claude/settings.json`.
+Python is the exception: Claude Code gets pyright from the official marketplace, and `pyright-lsp@base-ai-lsp` is for Copilot CLI only.
+To turn off Python for Claude Code, run `claude plugin disable pyright-lsp@claude-plugins-official --scope project`.
+The same applies to jdtls once you enable it: use `jdtls-lsp@claude-plugins-official`.
 
 ## Why does VS Code need extensions for languages the agents already cover?
 
