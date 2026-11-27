@@ -56,23 +56,39 @@
 		"ghcr.io/devcontainers/features/copilot-cli:1": {},
 
 		// Local Feature (./features/npm-packages) - installsAfter node, since it
-		// needs npm. Same packages previously installed via postCreateCommand.
+		// needs npm. Same packages previously installed via postCreateCommand,
+		// plus the npm language servers (bash, yaml, json/html/css, dockerfile).
+		// typescript-language-server stays for projects with a local TypeScript
+		// <=6; no plugin uses it (TypeScript 7 runs as 'tsc --lsp --stdio').
 		"./features/npm-packages": {},
 
-		// Local Feature (./features/lsp-config) - bakes the agent LSP config that
-		// used to live in the Dockerfile: ~/.copilot/lsp-config.json (Copilot CLI)
-		// and ~/.claude/CLAUDE.md (Claude Code bias). installsAfter claude-code/
-		// copilot-cli/node so their homes exist first. ENABLE_LSP_TOOL and the
-		// claude plugins themselves are handled by the 'claude-code' Feature above.
+		// Local Feature (./features/lsp-servers) - language-server binaries npm
+		// doesn't ship (marksman, taplo) into ~/.local/bin. jdtls, terraform-ls and
+		// LemMinx are available there as commented-out blocks.
+		"./features/lsp-servers": {},
+
+		// Local Feature (./features/lsp-config) - bakes the local plugin marketplace
+		// 'base-ai-lsp' (/usr/local/share/base-ai-lsp, one plugin per language
+		// server), installs it for Copilot CLI and Claude Code at user scope, and
+		// writes ~/.claude/CLAUDE.md (Claude Code bias). installsAfter claude-code/
+		// copilot-cli/node, since it runs both CLIs. ENABLE_LSP_TOOL and Claude's
+		// pyright plugin come from the 'claude-code' Feature below.
 		"./features/lsp-config": {},
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/claude-code
 		// self-contained native binary installer, no npm/node dependency.
-		// Also installs the LSP plugins (pyright-lsp/typescript-lsp/gopls-lsp) at user
-		// scope and sets ENABLE_LSP_TOOL=1 via its default 'lspPlugins' option. The
-		// language-server binaries come from node/npm-packages (pyright-langserver,
-		// typescript-language-server); gopls stays dormant until a Go toolchain is added.
-		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {},
+		// Also installs the LSP plugins in 'lspPlugins' at user scope and sets
+		// ENABLE_LSP_TOOL=1. The binary pyright-langserver comes from npm-packages.
+		"ghcr.io/bugrasan/devcontainers-features/claude-code:1": {
+			// Not the default, which adds typescript-lsp@claude-plugins-official: it
+			// runs typescript-language-server, which fails with TypeScript 7 (no
+			// lib/tsserver.js, see
+			// https://github.com/typescript-language-server/typescript-language-server/issues/1110).
+			// TypeScript comes from typescript-lsp@base-ai-lsp (./features/lsp-config).
+			"lspPlugins": "pyright-lsp@claude-plugins-official"
+			// Java: after enabling jdtls in ./features/lsp-servers, use instead:
+			//   "lspPlugins": "pyright-lsp@claude-plugins-official jdtls-lsp@claude-plugins-official"
+		},
 
 		// Published from https://github.com/bugrasan/devcontainers-features/tree/main/src/speckit
 		// installs the 'specify' CLI (Spec-Driven Development) via uv. Requires Python 3.11+

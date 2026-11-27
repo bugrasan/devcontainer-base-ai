@@ -56,21 +56,64 @@ After you update the template, run `docker pull ghcr.io/bugrasan/devcontainer-ba
 
 ## LSP code intelligence
 
-`ENABLE_LSP_TOOL=1` is set so AI agents use language servers (go-to-definition,
-find-references, hover, diagnostics) instead of grep/read. Wired for all three
-harnesses baked into the `:base` image:
+`ENABLE_LSP_TOOL=1` is set, so AI agents use language servers (go-to-definition, find-references, hover, diagnostics) instead of grep/read.
+The `:base` image ships these servers:
 
-- **Claude Code** — the `claude-code` Feature installs the `pyright-lsp` +
-  `typescript-lsp` plugins at user scope and sets `ENABLE_LSP_TOOL=1`.
-- **GitHub Copilot CLI** — user-scope `~/.copilot/lsp-config.json` (written by
-  the local `lsp-config` Feature) wires the Python + TypeScript servers.
-- **VS Code Copilot** — the built-in `usages` tool (`#usages`, since v1.99;
-  *not* `find_symbol`, which is a Visual Studio 2026 tool) reads from Pylance
-  (Python extension) and VS Code's built-in TypeScript features.
+| Server ID | Command | File extensions |
+|---|---|---|
+| `bash` | `bash-language-server start` | `.sh`, `.bash` |
+| `yaml` | `yaml-language-server --stdio` | `.yaml`, `.yml` |
+| `json` | `vscode-json-language-server --stdio` | `.json`, `.jsonc` |
+| `html` | `vscode-html-language-server --stdio` | `.html`, `.htm` |
+| `css` | `vscode-css-language-server --stdio` | `.css`, `.scss`, `.less` |
+| `dockerfile` | `docker-langserver --stdio` | `.dockerfile` only; a file named `Dockerfile` doesn't match |
+| `markdown` | `marksman server` | `.md`, `.markdown` |
+| `toml` | `taplo lsp stdio` | `.toml` |
+| `pyright` | `pyright-langserver --stdio` | `.py`, `.pyi` |
+| `typescript` | `tsc --lsp --stdio` (TypeScript 7) | `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs` |
 
-Language servers: `pyright-langserver` + `typescript-language-server` (from the
-`npm-packages` Feature). Go is **not** included; add a Go toolchain + the
-`gopls-lsp` plugin if you need it.
+The `npm-packages` Feature installs the npm servers, and the `lsp-servers` Feature installs `marksman` and `taplo` into `~/.local/bin`.
+The global `typescript` package is TypeScript 7, which brings its own language server (`tsc --lsp --stdio`) and no `lib/tsserver.js`.
+`typescript-language-server` stays installed for projects with a local TypeScript 6 or older, but no plugin uses it ([typescript-language-server#1110](https://github.com/typescript-language-server/typescript-language-server/issues/1110)).
+`vscode-eslint-language-server` is installed but not wired: Copilot CLI starts one server per file extension, so it never ran next to `typescript`, and it has no symbols and needs VS Code settings.
+jdtls (Java, with `openjdk-25-jdk-headless`), terraform-ls, and LemMinx (XML) are available, commented out, in `.devcontainer/base/features/lsp-servers` of the [devcontainer-base-ai](https://github.com/bugrasan/devcontainer-base-ai) repo.
+Go is not included.
+
+How each agent gets the servers:
+
+- **Claude Code** – user-scope plugins `<id>-lsp@base-ai-lsp` for every server except pyright.
+  pyright comes from `pyright-lsp@claude-plugins-official`, installed by the `claude-code` Feature.
+  The image doesn't install `typescript-lsp@claude-plugins-official`, because it runs `typescript-language-server`.
+- **GitHub Copilot CLI** – user-scope plugins `<id>-lsp@base-ai-lsp` for every server, including pyright, because Copilot CLI can't add the `claude-plugins-official` marketplace.
+- **VS Code** – VS Code doesn't use the CLI plugins; its language features come from extensions with their own servers.
+  JSON, HTML, CSS, Markdown, and TypeScript are built in, the `node` and `python` Features add ESLint and Pylance, and this Template adds YAML, Bash, Docker, and TOML extensions.
+  The built-in `usages` tool (`#usages`, since v1.99; not `find_symbol`, which is a Visual Studio 2026 tool) reads from these extensions.
+  The `anthropic.claude-code` extension runs Claude Code, so the Claude Code plugins should apply there too (unverified).
+
+### The `base-ai-lsp` plugin marketplace
+
+The `lsp-config` Feature generates a local plugin marketplace at `/usr/local/share/base-ai-lsp`, with one plugin per server.
+The folder is owned by root and read-only for the user.
+Each plugin holds two manifests: `.claude-plugin/plugin.json` for Claude Code and `.github/plugin/plugin.json` for Copilot CLI.
+Copilot CLI loads the plugins from that folder; Claude Code copies them to `~/.claude/plugins/cache`.
+No third-party marketplace is involved.
+Run `copilot lsp list` or `claude plugin list` to see them.
+
+- A bind mount of a host `~/.claude` (commented out in `mounts`) hides the plugins baked into the image's `~/.claude`.
+  To get them back, run `claude plugin marketplace add /usr/local/share/base-ai-lsp --scope user`, then `claude plugin install <id>-lsp@base-ai-lsp --scope user` for each server; this writes to the mounted host folder.
+- A project can override or turn off a Copilot CLI server in `.github/lsp.json`.
+  For example, `{"lspServers": {"yaml": {"disabled": true}}}` removes the yaml server for that project.
+
+### YAML schemas
+
+`yaml-language-server` can download the SchemaStore catalog from `www.schemastore.org`, then each matching schema on demand.
+Schemas add validation, completion, and hover for known files, such as GitHub workflows; without them, YAML still gets syntax checks and symbols.
+The server applies its settings, and starts the download, only when the client sends `workspace/didChangeConfiguration`.
+
+- Copilot CLI 1.0.116 doesn't send it, so it gets no download and no schema validation (tested).
+- Claude Code sends its `settings` field that way, so the download likely runs there (unverified).
+
+For offline or sandboxed containers, see the comment at the yaml row in `.devcontainer/base/features/lsp-config/install.sh`.
 
 ## OpenTelemetry Collector (not auto-started)
 

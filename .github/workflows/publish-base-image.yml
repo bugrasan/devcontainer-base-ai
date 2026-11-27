@@ -116,6 +116,9 @@ jobs:
             "${IMAGE}:latest-linux-arm64"
 
   # Verify the published multi-arch image contains the expected tools.
+  # The checks live in .devcontainer/base/smoke-test.sh and lsp-check.py,
+  # so they can run against a locally built image too; both are mounted,
+  # not baked in.
   smoke-test:
     needs: manifest
     strategy:
@@ -126,6 +129,8 @@ jobs:
       packages: read
       contents: read
     steps:
+      - uses: actions/checkout@v7
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
@@ -139,58 +144,7 @@ jobs:
           docker inspect --format '{{ index .Config.Labels "devcontainer.metadata" }}' \
             ghcr.io/bugrasan/devcontainer-base-ai/base:latest | grep -q '"init":true' || exit 1
           echo "✓ init enabled in devcontainer.metadata"
-          docker run --rm ghcr.io/bugrasan/devcontainer-base-ai/base:latest bash -c '
-            set -e
-            echo "=== Smoke Test ==="
-            command -v node || exit 1
-            echo "✓ node found"
-            node --version
-            command -v python3 || exit 1
-            echo "✓ python3 found"
-            python3 --version
-            command -v gh || exit 1
-            echo "✓ gh found"
-            gh --version
-            command -v copilot || exit 1
-            echo "✓ copilot found"
-            copilot --version
-            command -v uv || exit 1
-            echo "✓ uv found"
-            uv --version
-            command -v eslint || exit 1
-            echo "✓ eslint found"
-            command -v tsc || exit 1
-            echo "✓ tsc found"
-            command -v pyright-langserver || exit 1
-            echo "✓ pyright-langserver found"
-            command -v typescript-language-server || exit 1
-            echo "✓ typescript-language-server found"
-            test -f "$HOME/.copilot/lsp-config.json" || exit 1
-            echo "✓ copilot lsp-config.json baked in"
-            test -f "$HOME/.claude/CLAUDE.md" || exit 1
-            echo "✓ claude LSP bias baked in"
-            command -v claude || exit 1
-            echo "✓ claude found"
-            claude --version
-            command -v herdr || exit 1
-            echo "✓ herdr found"
-            herdr --version
-            command -v herdr-core || exit 1
-            echo "✓ herdr-core found"
-            herdr-core --version
-            test -f "$HOME/.claude/skills/herdr-core/SKILL.md" || exit 1
-            test -f "$HOME/.copilot/skills/herdr-core/SKILL.md" || exit 1
-            echo "✓ herdr-core skill baked in for claude and copilot"
-            test -O "$HOME/.local/state" && test -O "$HOME/.local/state/herdr-core" || exit 1
-            test "$(stat -c %a "$HOME/.local/state/herdr-core")" = 700 || exit 1
-            echo "✓ ~/.local/state/herdr-core owned by the user, mode 700 (herdr-core state mount)"
-            test -f /etc/machine-id && ! test -s /etc/machine-id || exit 1
-            echo "✓ /etc/machine-id is an empty file"
-            # command -v sshd || exit 1
-            # echo "✓ sshd found"
-            # grep -qx "Port 2222" /etc/ssh/sshd_config || exit 1
-            # echo "✓ sshd configured on port 2222"
-            # test -x /etc/init.d/ssh || exit 1
-            # echo "✓ sshd init script found"
-            echo "✓ All tools verified"
-          '
+          docker run --rm \
+            -v "$PWD/.devcontainer/base/smoke-test.sh:/tmp/smoke/smoke-test.sh:ro" \
+            -v "$PWD/.devcontainer/base/lsp-check.py:/tmp/smoke/lsp-check.py:ro" \
+            ghcr.io/bugrasan/devcontainer-base-ai/base:latest bash /tmp/smoke/smoke-test.sh

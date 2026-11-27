@@ -2,13 +2,18 @@
     // https://containers.dev/implementors/features/
     "name": "lsp-config",
     "id": "lsp-config",
-    "version": "1.0.0",
-    "description": "Bakes agent LSP config: a GitHub Copilot CLI ~/.copilot/lsp-config.json (pyright + typescript language servers) and a short ~/.claude/CLAUDE.md bias toward LSP over grep/read for Claude Code. The language-server binaries must be provided separately (this image installs pyright + typescript-language-server via the npm-packages Feature).",
+    "version": "2.0.0",
+    "description": "Bakes agent LSP config: a self-owned local plugin marketplace 'base-ai-lsp' at /usr/local/share/base-ai-lsp (one plugin per language server), installed at user scope for the GitHub Copilot CLI and Claude Code, plus a short ~/.claude/CLAUDE.md bias toward LSP over grep/read for Claude Code. The language-server binaries must be provided separately (this image installs them via the npm-packages and lsp-servers Features).",
     "options": {
-        "copilotLspConfig": {
+        "copilotLspPlugins": {
             "type": "boolean",
             "default": true,
-            "description": "Write a user-scope ~/.copilot/lsp-config.json wiring pyright-langserver and typescript-language-server for the GitHub Copilot CLI."
+            "description": "Register the base-ai-lsp marketplace with the GitHub Copilot CLI and install every plugin from it (bash, yaml, json, html, css, dockerfile, markdown, toml, pyright, typescript)."
+        },
+        "claudeLspPlugins": {
+            "type": "boolean",
+            "default": true,
+            "description": "Register the base-ai-lsp marketplace with Claude Code and install its plugins, except pyright, which comes from claude-plugins-official through the claude-code Feature's lspPlugins option."
         },
         "claudeLspBias": {
             "type": "boolean",
@@ -16,10 +21,11 @@
             "description": "Write a short ~/.claude/CLAUDE.md nudging Claude Code to prefer LSP navigation over grep/read."
         },
     },
-    // Ordering-only: these Features' installers create/populate the remote user's
-    // home (and, for claude-code, ~/.claude) - run after them so we don't race a
-    // later chown. None of them is a hard dependency; this Feature only writes
-    // plain config files.
+    // Ordering: these Features' installers create/populate the remote user's
+    // home (and, for claude-code, ~/.claude) - run after them so we don't race
+    // a later chown. copilot-cli and claude-code are also needed when their
+    // plugin option is on: install.sh runs 'copilot plugin' and 'claude
+    // plugin' and fails with a clear message if either CLI is missing.
     "installsAfter": [
         "ghcr.io/devcontainers/features/node",
         "ghcr.io/devcontainers/features/copilot-cli",

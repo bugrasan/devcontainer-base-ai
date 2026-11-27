@@ -1,0 +1,17 @@
+{
+    // https://containers.dev/implementors/features/
+    "name": "lsp-servers",
+    "id": "lsp-servers",
+    "version": "1.0.0",
+    "description": "Installs language-server binaries that npm does not ship into the remote user's ~/.local/bin: marksman (Markdown) and taplo (TOML). jdtls (with openjdk-25-jdk-headless), terraform-ls, and LemMinx (XML) are available as commented-out blocks in install.sh. The agent plugins that use them come from the lsp-config Feature.",
+    // Ordering-only, for build-cache reuse: every download tracks the latest
+    // release and changes more often than the stable Features below, so it
+    // installs after them. No hard dependency.
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/devcontainers/features/node",
+        "ghcr.io/devcontainers/features/python",
+        "ghcr.io/devcontainers/features/github-cli",
+        "ghcr.io/devcontainers/features/copilot-cli",
+    ],
+}
