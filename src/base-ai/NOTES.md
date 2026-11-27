@@ -62,8 +62,9 @@ The `:base` image ships these servers:
 | `typescript` | `tsc --lsp --stdio` (TypeScript 7) | `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs` |
 
 The `npm-packages` Feature installs the npm servers, and the `lsp-servers` Feature installs `marksman` and `taplo` into `~/.local/bin`.
+The bash server uses `shellcheck` for diagnostics and `shfmt` for formatting; both are installed.
 The global `typescript` package is TypeScript 7, which brings its own language server (`tsc --lsp --stdio`) and no `lib/tsserver.js`.
-`typescript-language-server` stays installed for projects with a local TypeScript 6 or older, but no plugin uses it ([typescript-language-server#1110](https://github.com/typescript-language-server/typescript-language-server/issues/1110)).
+The image doesn't install `typescript-language-server`, because it needs `lib/tsserver.js` ([typescript-language-server#1110](https://github.com/typescript-language-server/typescript-language-server/issues/1110)); a project with a local TypeScript 6 or older can install it locally.
 `vscode-eslint-language-server` is installed but not wired: Copilot CLI starts one server per file extension, so it never ran next to `typescript`, and it has no symbols and needs VS Code settings.
 jdtls (Java, with `openjdk-25-jdk-headless`), terraform-ls, and LemMinx (XML) are available, commented out, in `.devcontainer/base/features/lsp-servers` of the [devcontainer-base-ai](https://github.com/bugrasan/devcontainer-base-ai) repo.
 Go is not included.

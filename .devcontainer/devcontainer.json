@@ -226,8 +226,8 @@
 		// diagnostics via language servers instead of grep/read). Also baked into the
 		// 'base' image (Dockerfile ENV + the claude-code Feature's containerEnv); set
 		// here too so it still applies if you swap the base image for one without it.
-		// Language servers: pyright-langserver + typescript-language-server (npm-packages
-		// Feature), Pylance (python Feature's VS Code extension).
+		// Language servers: pyright-langserver + 'tsc --lsp' (npm-packages Feature),
+		// Pylance (python Feature's VS Code extension).
 		"ENABLE_LSP_TOOL": "1",
 
 		// SSHD_PORT/START_SSHD are intentionally omitted: the sshd Feature already

@@ -7,7 +7,7 @@
     "options": {
         "packages": {
             "type": "string",
-            "default": "editorconfig eslint typescript pyright typescript-language-server bash-language-server yaml-language-server vscode-langservers-extracted dockerfile-language-server-nodejs",
+            "default": "editorconfig eslint typescript pyright bash-language-server yaml-language-server vscode-langservers-extracted dockerfile-language-server-nodejs",
             "description": "Space-separated list of npm packages to install globally."
         },
     },

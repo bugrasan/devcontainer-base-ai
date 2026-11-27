@@ -52,8 +52,8 @@ command -v tsc || exit 1
 echo "✓ tsc found"
 command -v pyright-langserver || exit 1
 echo "✓ pyright-langserver found"
-command -v typescript-language-server || exit 1
-echo "✓ typescript-language-server found"
+command -v shfmt || exit 1
+echo "✓ shfmt found"
 for bin in "${LSP_BINARIES[@]}"; do
     command -v "${bin}" || exit 1
     echo "✓ ${bin} found"

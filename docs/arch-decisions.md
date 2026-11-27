@@ -55,7 +55,7 @@ Each entry states the decision, the reason, and its consequences.
 - Decision: the `typescript` plugin in `base-ai-lsp` runs `tsc --lsp --stdio` for both agents; the `claude-code` Feature's `lspPlugins` is set to `pyright-lsp@claude-plugins-official` only
 - Why: the npm `typescript` package is TypeScript 7 (typescript-go), which ships no `lib/tsserver.js`; `typescript-language-server`, also used by `typescript-lsp@claude-plugins-official`, then fails at `initialize` with "Could not find a valid TypeScript installation" ([typescript-language-server#1110](https://github.com/typescript-language-server/typescript-language-server/issues/1110)); `tsc --lsp --stdio` is TypeScript 7's own server, not a workaround, and returned symbols and hover with Copilot CLI 1.0.116 (tested 2026-11-27)
 - Consequences:
-  - `typescript-language-server` stays in `npm-packages` for projects with a local TypeScript 6 or older; no plugin uses it
+  - `typescript-language-server` is no longer installed by `npm-packages`; a project with a local TypeScript 6 or older that needs it can install it locally
   - the smoke test fails if `typescript-lsp@claude-plugins-official` is enabled
   - `lsp-check.py` starts every server both agents configure, so a broken command fails the smoke test
 
