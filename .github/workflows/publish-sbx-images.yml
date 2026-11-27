@@ -1,0 +1,149 @@
+name: "Publish sbx Images"
+
+# Builds sbx-agent and sbx-proxy from src/sbx/.devcontainer/Dockerfile.*,
+# runs the acceptance tests on Docker against the fresh images, and only then
+# publishes them. The tested image is the one pushed (docker tag + push).
+#
+# Triggers: Dockerfile or workflow changes on main (not squid.conf or other
+# template files: those only republish the template), a weekly rebuild that
+# picks up Debian package updates, and manual runs.
+# 08:54 UTC every Saturday, two hours after the :base rebuild.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/sbx/.devcontainer/Dockerfile.*"
+      - "src/sbx/devcontainer-template.json"
+      - ".github/workflows/publish-sbx-images.yml"
+  schedule:
+    - cron: "54 8 * * 6"
+  workflow_dispatch: {}
+
+env:
+  AGENT_IMAGE: ghcr.io/bugrasan/devcontainer-base-ai/sbx-agent
+  PROXY_IMAGE: ghcr.io/bugrasan/devcontainer-base-ai/sbx-proxy
+
+jobs:
+  # Native per-arch builds on GitHub's amd64 and arm64 runners (no QEMU),
+  # as in publish-base-image.yml.
+  build-test-push:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The image version follows the template version, so one number
+      # describes a matching template and image pair. The scheduled run
+      # refreshes only :latest, so a published :<version> never changes.
+      - name: Read version
+        id: version
+        run: |
+          version=$(jq -r .version src/sbx/devcontainer-template.json)
+          tags="latest"
+          [ "${{ github.event_name }}" = "schedule" ] || tags="latest $version"
+          { echo "version=$version"; echo "tags=$tags"; } >> "$GITHUB_OUTPUT"
+
+      # --load puts the images into the local Docker engine for the tests.
+      # The scheduled run skips the cache: a cached apt-get layer would keep
+      # last week's packages (see publish-base-image.yml).
+      - name: Build images
+        working-directory: src/sbx/.devcontainer
+        run: |
+          set -euo pipefail
+          no_cache=${{ github.event_name == 'schedule' && '--no-cache' || '' }}
+          for pair in "agent:${AGENT_IMAGE}" "proxy:${PROXY_IMAGE}"; do
+            name=${pair%%:*} image=${pair#*:}
+            docker buildx build --load $no_cache \
+              --platform linux/${{ matrix.arch }} \
+              --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+              --label "org.opencontainers.image.version=${{ steps.version.outputs.version }}" \
+              --cache-from "type=registry,ref=${image}:buildcache-${{ matrix.arch }}" \
+              --cache-to "type=registry,ref=${image}:buildcache-${{ matrix.arch }},mode=max" \
+              -f "Dockerfile.${name}" -t "${image}:ci" .
+          done
+
+      # Runs the template as a user would, with the CI images instead of the
+      # published ones; --pull never makes a missing image an error.
+      - name: Acceptance tests (Docker)
+        working-directory: src/sbx/.devcontainer
+        run: |
+          set -euo pipefail
+          ./sbx-init.sh
+          printf 'AGENT_IMAGE=%s:ci\nPROXY_IMAGE=%s:ci\n' "$AGENT_IMAGE" "$PROXY_IMAGE" >> .env
+          docker compose up -d --pull never
+          for _ in $(seq 30); do
+            docker compose exec -T agent test -S /run/egress/http.sock && break
+            sleep 1
+          done
+          tests/acceptance.sh
+
+      - name: Show logs on failure
+        if: failure()
+        working-directory: src/sbx/.devcontainer
+        run: docker compose ps -a && docker compose logs
+
+      - name: Push tested images
+        run: |
+          set -euo pipefail
+          for image in "$AGENT_IMAGE" "$PROXY_IMAGE"; do
+            for tag in ${{ steps.version.outputs.tags }}; do
+              docker tag "${image}:ci" "${image}:${tag}-linux-${{ matrix.arch }}"
+              docker push "${image}:${tag}-linux-${{ matrix.arch }}"
+            done
+          done
+
+  # Combines the per-arch images into multi-arch :latest and, except on the
+  # scheduled run, :<version> tags.
+  manifest:
+    needs: build-test-push
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Merge platform images into multi-arch manifests
+        run: |
+          set -euo pipefail
+          version=$(jq -r .version src/sbx/devcontainer-template.json)
+          tags="latest"
+          [ "${{ github.event_name }}" = "schedule" ] || tags="latest $version"
+          for image in "$AGENT_IMAGE" "$PROXY_IMAGE"; do
+            for tag in $tags; do
+              docker buildx imagetools create -t "${image}:${tag}" \
+                "${image}:${tag}-linux-amd64" \
+                "${image}:${tag}-linux-arm64"
+            done
+          done

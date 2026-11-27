@@ -1,0 +1,7 @@
+# CFG-01-compose override for rootless Podman (Linux hosts): map the agent's UID 1000 to the host user,
+# so files it writes in the workspace belong to you (as CFG-01-podman does at pod level)
+services:
+  agent:
+    userns_mode: "keep-id:uid=1000,gid=1000"
+    # run as the mapped UID, whatever AGENT_UID in .env says
+    user: "1000:1000"

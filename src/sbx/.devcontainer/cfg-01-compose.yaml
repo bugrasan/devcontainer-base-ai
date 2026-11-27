@@ -1,7 +1,9 @@
 # CFG-01-compose: ARC-01 as one compose file – agent without network, Squid sidecar, Unix-socket bridge
-# Keep this folder outside the agent's workspace (WS); the agent could otherwise rewrite its own policy
+# Lives in the project's .devcontainer/ folder; the agent sees this folder read-only (README.md, AD-01)
+# Relative paths resolve against this folder: '.' is .devcontainer/, '..' is the project root
 # Run as your normal user, never with sudo: the agent would otherwise run as UID 0
-name: ${P:-agent-a}
+# sbx-init.sh writes PROJECT and P to .env before every start (devcontainer.json, pm-comp.sh)
+name: ${P:?run sbx-init.sh first; it writes P and PROJECT to .env}
 
 # Shared hardening: no capabilities and no privilege gain (HRD-01, HRD-02)
 x-hardening: &hardening
@@ -24,11 +26,16 @@ x-proxy-env: &proxy-env
   DISABLE_TELEMETRY: "1"
   DISABLE_ERROR_REPORTING: "1"
 
+# Published images by default; `up --build` builds them from the Dockerfiles in this folder instead.
+# missing: pull only when the image is not present locally; `docker compose pull` fetches a newer :latest
+x-agent-image: &agent-image
+  image: ${AGENT_IMAGE:-ghcr.io/bugrasan/devcontainer-base-ai/sbx-agent:latest}
+  pull_policy: missing
+
 services:
   # One-shot: hand the socket volume to Squid's UID 13; Docker has no :U volume option
   socket-owner:
-    <<: *hardening
-    image: ${AGENT_IMAGE:-localhost/agent:1}
+    <<: [*hardening, *agent-image]
     build:
       context: .
       dockerfile: Dockerfile.agent
@@ -45,7 +52,8 @@ services:
   # and the restart policy brings it back
   egress-proxy:
     <<: *hardening
-    image: ${SQUID_IMAGE:-localhost/squid:1}
+    image: ${PROXY_IMAGE:-ghcr.io/bugrasan/devcontainer-base-ai/sbx-proxy:latest}
+    pull_policy: missing
     build:
       context: .
       dockerfile: Dockerfile.proxy
@@ -69,15 +77,36 @@ services:
         condition: service_completed_successfully
 
   # Agent: no network at all; socat turns its local proxy port into the socket file
+  # The project root is its workspace; .devcontainer/, .git/, and .copilot/ are mounted read-only
+  # on top, so the agent cannot change its own policy or files that host tools run (HRD-13).
+  # create_host_path: false fails the start instead of creating root-owned folders on the host;
+  # sbx-init.sh creates missing .git/ and .copilot/ folders first
   agent:
-    <<: *hardening
-    image: ${AGENT_IMAGE:-localhost/agent:1}
+    <<: [*hardening, *agent-image]
     user: "${AGENT_UID:-1000}:${AGENT_GID:-1000}"
     network_mode: none
     environment: *proxy-env
-    working_dir: /workspace
+    working_dir: /workspaces/${PROJECT:?run sbx-init.sh first}
     volumes:
-      - ${WS:?set WS to the absolute workspace path}:/workspace
+      - type: bind
+        source: ..
+        target: /workspaces/${PROJECT}
+        bind: {create_host_path: false}
+      - type: bind
+        source: .
+        target: /workspaces/${PROJECT}/.devcontainer
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../.git
+        target: /workspaces/${PROJECT}/.git
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../.copilot
+        target: /workspaces/${PROJECT}/.copilot
+        read_only: true
+        bind: {create_host_path: false}
       - egress:/run/egress:ro
     command:
       - bash

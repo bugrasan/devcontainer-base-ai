@@ -1,6 +1,7 @@
 # Agent image (IMG-03): the published base image plus what ARC-01 and the acceptance tests need.
 # The base image has no socat, dig, ip, or xxd.
-FROM ghcr.io/bugrasan/devcontainer-base-ai/base:latest
+# Pinned by digest (multi-arch index of :latest); bump it by hand until a bot does (README Todo)
+FROM ghcr.io/bugrasan/devcontainer-base-ai/base:latest@sha256:71c5891c3d346fab7bc9fae2ca0470a3384111309bde20cfbcccaa74e1d0c5e0
 
 USER root
 ENV DEBIAN_FRONTEND=noninteractive

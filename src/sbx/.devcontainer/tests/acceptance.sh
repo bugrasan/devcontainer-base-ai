@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Acceptance tests of the handover (section 12) that run against a started CFG-01-compose project.
-# Covers AT-01 to AT-06, AT-09, AT-10, AT-16, and AT-20; run from any folder:
-#   .agent-policy/tests/acceptance.sh [-f override.yaml]...
+# Covers AT-01 to AT-06, AT-09, AT-10, AT-16, AT-20, and the read-only part of AT-25; run from any folder:
+#   .devcontainer/tests/acceptance.sh [-f override.yaml]...
 # Set COMPOSE to the compose command if it is not `docker compose`.
 set -uo pipefail
 
@@ -49,9 +49,16 @@ logs=$(dc logs egress-proxy 2>&1)
 check AT-16-tunnel yes "$(grep -q 'TCP_TUNNEL/200' <<< "$logs" && echo yes || echo no)"
 check AT-16-denied yes "$(grep -q 'TCP_DENIED/403' <<< "$logs" && echo yes || echo no)"
 
+# AT-25 (AD-01, AD-03): the agent must not change its policy or files that host tools run
+for d in .devcontainer .git .copilot; do
+  out=$(agent bash -c "touch $d/.acceptance-\$\$ 2>&1 && rm -f $d/.acceptance-\$\$")
+  case $out in *"Read-only file system"*) r=denied ;; *) r="allowed: $out" ;; esac
+  check "AT-25-$d" denied "$r"
+done
+
 # AT-20: the file must exist with the agent's UID in the container; compare the host owner by hand
 f=.acceptance-$$
-agent bash -c "id -u; touch /workspace/$f"
-echo "AT-20: inspect \$WS/$f on the host; it should belong to you (Podman keep-id) or to AGENT_UID (Docker); then delete it"
+agent bash -c "id -u; touch ./$f"
+echo "AT-20: inspect $(cd "$dir/.." && pwd)/$f on the host; it should belong to you (Podman keep-id) or to AGENT_UID (Docker); then delete it"
 
 exit $fail

@@ -28,8 +28,12 @@ jobs:
           fetch-depth: 0
 
       # Publishes each src/<templateId> as an OCI artifact to
-      # ghcr.io/bugrasan/devcontainer-base-ai/<templateId>, plus a collection
-      # metadata package at ghcr.io/bugrasan/devcontainer-base-ai.
+      # ghcr.io/bugrasan/devcontainer-base-ai/templates/<templateId>, plus a
+      # collection metadata package at the namespace itself. The templates/
+      # namespace keeps templates apart from the images published under
+      # ghcr.io/bugrasan/devcontainer-base-ai/ (base, sbx-agent, sbx-proxy).
+      # Before this namespace, templates went to .../<templateId> directly;
+      # those old packages get no further updates.
       # NOTE: this repo is intentionally NOT added to the public containers.dev
       # index (no PR to devcontainers/devcontainers.github.io).
       - name: "Publish Templates"
@@ -37,6 +41,7 @@ jobs:
         with:
           publish-templates: "true"
           base-path-to-templates: "./src"
+          templates-namespace: "bugrasan/devcontainer-base-ai/templates"
           generate-docs: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

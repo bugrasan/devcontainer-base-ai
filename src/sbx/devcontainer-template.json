@@ -1,0 +1,12 @@
+{
+	"id": "sbx",
+	"version": "0.1.0",
+	"name": "Sandbox (sbx) – agent without network",
+	"description": "Runs a coding agent in a container with no network, next to a Squid sidecar that allows only a reviewed list of hostnames. Uses the published sbx-agent and sbx-proxy images; Docker or rootless Podman 6.",
+	"documentationURL": "https://github.com/bugrasan/devcontainer-base-ai/tree/main/src/sbx",
+	"licenseURL": "https://github.com/bugrasan/devcontainer-base-ai/blob/main/LICENSE",
+	"options": {},
+	"platforms": [
+		"Any"
+	]
+}

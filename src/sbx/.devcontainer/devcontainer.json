@@ -1,0 +1,18 @@
+// Sandbox (sbx): agent container without network plus a Squid egress proxy (CFG-01-compose)
+// This file only starts and stops compose (DEC-02); the one exception is initializeCommand,
+// which runs sbx-init.sh on the host (README.md, AD-02).
+// Do not open confidential repositories with VS Code here until OPEN-12 is verified (AT-23):
+// attaching may forward host credentials (.gitconfig, credential helper, SSH agent; HRD-12).
+// Podman: add "cfg-01-compose-podman.yaml" to dockerComposeFile (INSTRUCTIONS.md).
+{
+	"name": "sbx",
+	"dockerComposeFile": ["cfg-01-compose.yaml"],
+	"service": "agent",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"initializeCommand": ["sh", "${localWorkspaceFolder}/.devcontainer/sbx-init.sh"],
+	// Keep the compose command: it runs the socat egress bridge
+	"overrideCommand": false,
+	// Compose sets the user (AGENT_UID, or Podman keep-id); no derived image
+	"updateRemoteUserUID": false,
+	"shutdownAction": "stopCompose"
+}
