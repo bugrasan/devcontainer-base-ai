@@ -245,6 +245,8 @@
 		"DO_NOT_TRACK": "true",
 
 		// gh-copilot: no opt-out telemetry
+		// Copilot-owned GitHub and Entra telemetry
+		"COPILOT_TELEMETRY_DISABLED": "true",
 
 		// claude-code disable telemetry - https://code.claude.com/docs/en/data-usage#telemetry-services
 		"DISABLE_TELEMETRY": "1",
